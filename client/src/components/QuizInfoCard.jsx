@@ -7,68 +7,70 @@ import { Tooltip } from "@nextui-org/react";
 function QuizInfoCard({ quizInfo }) {
   return (
     <Card className="h-full py-2 bg-background/60 shadow-2xl" isBlurred>
-      <CardHeader className="relative pb-0 pt-2 px-4 flex-col items-start">
-        <Image
-          alt={quizInfo?.quiz_name + " cover image"}
-          className="object-cover rounded-xl"
-          src={quizInfo?.cover_image_url}
-          isBlurred
-          isZoomed
-        />
-        {quizInfo?.success_rate ? (
-          <Tooltip
-            color="foreground"
-            content={quizInfo?.success_rate + "% Success Rate."}
-          >
-            <Chip
-              className="absolute z-10 bottom-2 left-6 min-w-4 min-h-4 cursor-pointer"
-              classNames={{
-                base: "bg-green-400/60 text-black border-1 border-black/50",
-                content: "font-medium",
-              }}
-              radius="sm"
-              size="sm"
-              variant="flat"
+      <CardHeader className="pb-0 pt-2 px-4 flex-col items-center">
+        <div className="relative">
+          <Image
+            alt={quizInfo?.quiz_name + " cover image"}
+            className="object-cover rounded-xl"
+            src={quizInfo?.cover_image_url}
+            isBlurred
+            isZoomed
+          />
+          {quizInfo?.success_rate ? (
+            <Tooltip
+              color="foreground"
+              content={quizInfo?.success_rate + "% Success Rate."}
             >
-              SR : {quizInfo?.success_rate}%
-            </Chip>
-          </Tooltip>
-        ) : null}
-        <div className="absolute z-10 bottom-2 right-6 flex flex-row gap-1">
-          <Tooltip
-            color="foreground"
-            content={quizInfo?.contestants_count + " Times Played"}
-          >
-            <Chip
-              className="min-w-4 min-h-4 cursor-pointer"
-              classNames={{
-                base: "bg-teal-400/50 text-black border-1 border-black/50",
-                content: "font-medium",
-              }}
-              radius="sm"
-              size="sm"
-              variant="flat"
+              <Chip
+                className="absolute z-10 bottom-2 left-2 min-w-4 min-h-4 cursor-pointer"
+                classNames={{
+                  base: "bg-green-400/60 text-black border-1 border-black/50",
+                  content: "font-medium",
+                }}
+                radius="sm"
+                size="sm"
+                variant="flat"
+              >
+                SR : {quizInfo?.success_rate}%
+              </Chip>
+            </Tooltip>
+          ) : null}
+          <div className="absolute z-10 bottom-2 right-2 flex flex-row gap-1">
+            <Tooltip
+              color="foreground"
+              content={quizInfo?.contestants_count + " Times Played"}
             >
-              Played : {quizInfo?.contestants_count}
-            </Chip>
-          </Tooltip>
-          <Tooltip
-            color="foreground"
-            content={quizInfo?.questions_count + " Total Questions"}
-          >
-            <Chip
-              className="min-w-4 min-h-4 cursor-pointer"
-              classNames={{
-                base: "bg-orange-400/50 text-black border-1 border-black/50",
-                content: "font-medium",
-              }}
-              radius="sm"
-              size="sm"
-              variant="flat"
+              <Chip
+                className="min-w-4 min-h-4 cursor-pointer"
+                classNames={{
+                  base: "bg-teal-400/50 text-black border-1 border-black/50",
+                  content: "font-medium",
+                }}
+                radius="sm"
+                size="sm"
+                variant="flat"
+              >
+                Played : {quizInfo?.contestants_count}
+              </Chip>
+            </Tooltip>
+            <Tooltip
+              color="foreground"
+              content={quizInfo?.questions_count + " Total Questions"}
             >
-              Qs : {quizInfo?.questions_count}
-            </Chip>
-          </Tooltip>
+              <Chip
+                className="min-w-4 min-h-4 cursor-pointer"
+                classNames={{
+                  base: "bg-orange-400/50 text-black border-1 border-black/50",
+                  content: "font-medium",
+                }}
+                radius="sm"
+                size="sm"
+                variant="flat"
+              >
+                Qs : {quizInfo?.questions_count}
+              </Chip>
+            </Tooltip>
+          </div>
         </div>
       </CardHeader>
       <CardBody className="overflow-visible py-2 px-4">

@@ -37,7 +37,9 @@ export default function NavbarComponent() {
       isMenuOpen={isMenuOpen}
       onMenuOpenChange={setIsMenuOpen}
       isBordered
-      className="bg-background/0 dark"
+      className={
+        (isNavbarBlurred ? " bg-background/30 " : " bg-background/0") + " dark"
+      }
       id="navbar"
     >
       <NavbarBrand>
@@ -63,7 +65,7 @@ export default function NavbarComponent() {
         </Link>
       </NavbarBrand>
 
-      <NavbarContent className="hidden xs:flex gap-4" justify="center">
+      <NavbarContent className="hidden lmd:flex gap-4" justify="center">
         <NavbarItem>
           <h3 className="text-xl">
             Play Quizzes in Real-Time with Friend&apos;s or Stranger&apos;s
