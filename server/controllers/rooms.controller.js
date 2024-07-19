@@ -1,12 +1,23 @@
-import { generateRandomRoomId } from "../utils/rooms.utils.js";
-import { getValidPublicRoomId } from "../websockets/handler.websocket.js";
+import HttpAppError from "../errors/app.error.js";
+import {
+  getValidPublicRoomId,
+  getValidGeneratedRoomId,
+} from "../websockets/handler.websocket.js";
 
-export async function getPublicRoomId(req, res) {
+export async function getPublicRoomId(req, res, next) {
   try {
-    const publicRoomId = await getValidPublicRoomId();
+    const publicRoomId = getValidPublicRoomId();
     res.send({ roomId: publicRoomId });
   } catch (error) {
-    console.log(error);
-    res.send(error);
+    next(error);
+  }
+}
+
+export async function getIdForPrivateRoom(req, res, next) {
+  try {
+    const privateRoomId = getValidGeneratedRoomId();
+    res.send({ roomId: privateRoomId });
+  } catch (error) {
+    next(error);
   }
 }

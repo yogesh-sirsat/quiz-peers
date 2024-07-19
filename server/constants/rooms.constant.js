@@ -72,7 +72,7 @@ const FICTIONAL_PLACES = [
   "the-citadel",
 
   // more mythology & legends
-  "olympus mons",
+  "olympus-mons",
   "jotunheim",
   "nidavellir",
   "alfheim",
@@ -98,7 +98,7 @@ const FICTIONAL_PLACES = [
   // more video games
   "bikini-bottom",
   "spiral-mountain",
-  "donkey-kong country",
+  "donkey-kong-country",
   "hyrule-field",
   "zanarkand",
   "coolsville",

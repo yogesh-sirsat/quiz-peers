@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGetAllQuizzesQuery } from "./store/api/quizzesApi";
 import QuizInfoCard from "./components/QuizInfoCard";
@@ -13,17 +12,17 @@ function App() {
   return (
     <article>
       <NavbarComponent />
-      <section className="w-[22rem] xs:w-[52rem] mx-auto pt-12">
+      <section className="w-auto md:w-[40rem] slg:w-[52rem] md:mx-auto pt-4 px-3 xs:px-5 xs:px-auto xs:pt-12">
         {error ? (
           <>Oh no, there was an error</>
         ) : isLoading ? (
           <>Loading...</>
         ) : data ? (
-          <ul className="grid grid-cols-1 xs:grid-cols-2 gap-8">
+          <ul className="grid grid-cols-1 slg:grid-cols-2 gap-4 xss:gap-6 xs:gap-8">
             {data?.map((quiz, index) => (
               <li
                 key={index}
-                className="min-h-[20rem] cursor-pointer"
+                className=" cursor-pointer"
                 onClick={() => navigate(`/quiz/${quiz.quiz_id}`)}
               >
                 <QuizInfoCard quizInfo={quiz} />

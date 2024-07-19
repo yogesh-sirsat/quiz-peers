@@ -17,4 +17,5 @@ body {
   background-color: #39004E;
   color: whitesmoke;
   min-height: 100vh;
+  min-width: 100vw;
 }

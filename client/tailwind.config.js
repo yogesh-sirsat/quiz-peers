@@ -10,8 +10,10 @@ export default {
   theme: {
     extend: {},
     screens: {
-      xxs: "380px",
+      xxs: "376px",
       xs: "460px",
+      lmd: "680px",
+      slg: "880px",
       ...defaultTheme.screens,
     },
   },

@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useGetQuizByIdQuery } from "../store/api/quizzesApi";
 import { useLazyGetPublicRoomIdQuery } from "../store/api/roomsApi";
 import NavbarComponent from "../components/ui/Navbar";
@@ -10,10 +10,10 @@ import { Tooltip } from "@nextui-org/tooltip";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { GlobeAlt, LockClosedSolid } from "../components/icons";
-import Alert from "../components/ui/Alert";
 
 export default function QuizDetails() {
   const { quizId } = useParams();
+  const navigate = useNavigate();
   dayjs.extend(relativeTime);
   // Using a query hook automatically fetches data and returns query values
   const { data, error, isLoading } = useGetQuizByIdQuery(quizId);
@@ -22,33 +22,35 @@ export default function QuizDetails() {
 
   const handleJoinPublic = async () => {
     try {
-      const { data } = await triggerPublicRoomId(quizId);
-      console.log(data);
+      const response = await triggerPublicRoomId(quizId);
+      if (response.isError) {
+        throw new Error(response.error?.data?.message);
+      }
+      if (response.data) {
+        navigate(`/quiz/${quizId}/${response.data.roomId}`);
+      }
     } catch (error) {
-      console.log(error);
+      alert(error.message);
     }
   };
 
   return (
     <article className="min-w-screen">
       <NavbarComponent />
-      <section className="flex flex-col items-center pt-6">
+      <section className="flex flex-col xs:items-center px-3 xs:px-5 pt-4 xs:pt-6">
         {error ? (
           <>Oh no, there was an error</>
         ) : isLoading ? (
           <>Loading...</>
         ) : data ? (
-          <section className="text-foreground flex flex-col items-center bg-background/60 shadow-2xl p-5 xs:p-7 rounded-2xl">
-            <Image
-              className="w-[22rem] xs:w-auto"
-              isBlurred
-              isZoomed
-              src={data?.cover_image_url}
-            />
-            <div className="flex flex-col gap-2 w-[22rem] xs:w-[52rem] pt-4">
-              <h1 className="font-semibold text-4xl">{data?.quiz_name}</h1>
+          <section className="text-foreground flex flex-col items-center bg-background/60 shadow-2xl p-4 xxs:p-5 xs:p-7 rounded-2xl">
+            <Image isBlurred isZoomed src={data?.cover_image_url} />
+            <div className="flex flex-col gap-2 pt-4">
+              <h1 className="font-semibold text-2xl xs:text-3xl sm:text-4xl">
+                {data?.quiz_name}
+              </h1>
 
-              <p>{data?.description}</p>
+              <p className="text-sm xs:text-base">{data?.description}</p>
               <ul className="flex flex-wrap gap-1">
                 {data?.categories?.map((category, index) => (
                   <li key={index}>
@@ -68,7 +70,7 @@ export default function QuizDetails() {
                   </li>
                 ))}
               </ul>
-              <p className="text-sm">
+              <p className="text-xs xs:text-sm">
                 Created {dayjs(data?.created_at).fromNow()} | Last updated{" "}
                 {dayjs(data?.updated_at).fromNow()}
               </p>
@@ -114,15 +116,14 @@ export default function QuizDetails() {
                 </Chip>
               </div>
               <Divider className="my-4" />
-              <h2 className="text-2xl mb-4 font-medium text-center underline">
-                Join the Quiz play
+              <h2 className="text-2xl mb-4 font-medium text-center underline underline-offset-8">
+                Join Quiz play room
               </h2>
-              <Alert />
               <div className="flex flex-row justify-around w-full">
                 <Tooltip color="foreground" content="Mysterious Room">
                   <Button
                     color="secondary"
-                    size="lg"
+                    className="px-4 xs:px-6 gap-2 xs:gap-3 min-w-20 xs:min-w-24 h-12 text-small xs:text-medium"
                     onClick={() => handleJoinPublic()}
                     endContent={<GlobeAlt />}
                     isLoading={isLoadingPublicRoomId}
@@ -134,7 +135,7 @@ export default function QuizDetails() {
                 <Tooltip color="foreground" content="Friendly Room">
                   <Button
                     color="primary"
-                    size="lg"
+                    className="px-4 xs:px-6 gap-2 xs:gap-3 min-w-20 xs:min-w-24 h-12 text-small xs:text-medium"
                     onClick={() => null}
                     endContent={<LockClosedSolid />}
                   >
@@ -144,7 +145,9 @@ export default function QuizDetails() {
               </div>
             </div>
           </section>
-        ) : null}
+        ) : (
+          <>No quiz data found</>
+        )}
       </section>
     </article>
   );
