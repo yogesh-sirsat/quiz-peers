@@ -10,9 +10,9 @@ function App() {
   const { data, error, isLoading } = useGetAllQuizzesQuery();
 
   return (
-    <article>
+    <section>
       <NavbarComponent />
-      <section className="w-auto md:w-[40rem] slg:w-[52rem] md:mx-auto pt-4 px-3 xs:px-5 xs:px-auto xs:pt-12">
+      <article className="w-auto md:w-[40rem] slg:w-[52rem] md:mx-auto pt-4 px-3 xs:px-5 xs:px-auto xs:pt-12 pb-8">
         {error ? (
           <>Oh no, there was an error</>
         ) : isLoading ? (
@@ -30,8 +30,8 @@ function App() {
             ))}
           </ul>
         ) : null}
-      </section>
-    </article>
+      </article>
+    </section>
   );
 }
 

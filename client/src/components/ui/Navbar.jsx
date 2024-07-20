@@ -65,11 +65,9 @@ export default function NavbarComponent() {
         </Link>
       </NavbarBrand>
 
-      <NavbarContent className="hidden lmd:flex gap-4" justify="center">
+      <NavbarContent className="hidden smd:flex gap-4" justify="center">
         <NavbarItem>
-          <h3 className="text-xl">
-            Play Quizzes in Real-Time with Friend&apos;s or Stranger&apos;s
-          </h3>
+          <h3 className="text-xl">Real-time Multiplayer Quizzes</h3>
         </NavbarItem>
       </NavbarContent>
     </Navbar>

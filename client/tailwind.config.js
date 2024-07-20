@@ -12,7 +12,7 @@ export default {
     screens: {
       xxs: "376px",
       xs: "460px",
-      lmd: "680px",
+      smd: "680px",
       slg: "880px",
       ...defaultTheme.screens,
     },
