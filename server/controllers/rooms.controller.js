@@ -2,7 +2,8 @@ import HttpAppError from "../errors/app.error.js";
 import {
   getValidPublicRoomId,
   getValidGeneratedRoomId,
-} from "../websockets/handler.websocket.js";
+  getRoomDetails,
+} from "../websockets/rooms.websocket.js";
 
 export async function getPublicRoomId(req, res, next) {
   try {
@@ -15,8 +16,18 @@ export async function getPublicRoomId(req, res, next) {
 
 export async function getIdForPrivateRoom(req, res, next) {
   try {
-    const privateRoomId = getValidGeneratedRoomId();
+    const privateRoomId = getValidGeneratedRoomId(false);
     res.send({ roomId: privateRoomId });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getRoomDetailsById(req, res, next) {
+  try {
+    const { roomId } = req.params;
+    const roomDetails = getRoomDetails(roomId);
+    res.send({ ...roomDetails });
   } catch (error) {
     next(error);
   }
