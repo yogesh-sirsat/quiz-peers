@@ -1,6 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetQuizByIdQuery } from "../store/api/quizzesApi";
-import { useLazyGetPublicRoomIdQuery } from "../store/api/roomsApi";
+import {
+  useLazyGetPublicRoomIdQuery,
+  useLazyGetIdForPrivateRoomQuery,
+} from "../store/api/roomsApi";
 import NavbarComponent from "../components/ui/Navbar";
 import { Image } from "@nextui-org/image";
 import { Button } from "@nextui-org/button";
@@ -19,6 +22,8 @@ export default function QuizDetails() {
   const { data, error, isLoading } = useGetQuizByIdQuery(quizId);
   const [triggerPublicRoomId, { isLoading: isLoadingPublicRoomId }] =
     useLazyGetPublicRoomIdQuery();
+  const [triggerPrivateRoomId, { isLoading: isLoadingPrivateRoomId }] =
+    useLazyGetIdForPrivateRoomQuery();
 
   const handleJoinPublic = async () => {
     try {
@@ -34,19 +39,33 @@ export default function QuizDetails() {
     }
   };
 
+  const handleCreatePrivate = async () => {
+    try {
+      const response = await triggerPrivateRoomId(quizId);
+      if (response.isError) {
+        throw new Error(response.error?.data?.message);
+      }
+      if (response.data) {
+        navigate(`/quiz/${quizId}/${response.data.roomId}`);
+      }
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
   return (
-    <article className="min-w-screen">
+    <section className="min-w-screen">
       <NavbarComponent />
-      <section className="flex flex-col xs:items-center px-3 xs:px-5 pt-4 xs:pt-6">
+      <section className="flex flex-col xs:items-center px-2 xxs:px-3 xs:px-5 pt-4 xs:pt-6 pb-6">
         {error ? (
           <>Oh no, there was an error</>
         ) : isLoading ? (
           <>Loading...</>
         ) : data ? (
-          <section className="text-foreground flex flex-col items-center bg-background/60 shadow-2xl p-4 xxs:p-5 xs:p-7 rounded-2xl">
+          <article className="text-foreground flex flex-col items-center bg-background/60 shadow-2xl p-3 xxs:p-5 xs:p-7 rounded-2xl">
             <Image isBlurred isZoomed src={data?.cover_image_url} />
-            <div className="flex flex-col gap-2 pt-4">
-              <h1 className="font-semibold text-2xl xs:text-3xl sm:text-4xl">
+            <div className="w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] flex flex-col gap-2 pt-4">
+              <h1 className="font-semibold text-2xl xs:text-3xl sm:text-4xl break-all">
                 {data?.quiz_name}
               </h1>
 
@@ -115,7 +134,7 @@ export default function QuizDetails() {
                   {data?.questions_count} TOTAL QUESTIONS
                 </Chip>
               </div>
-              <Divider className="my-4" />
+              <Divider className="my-2 md:my-4" />
               <h2 className="text-2xl mb-4 font-medium text-center underline underline-offset-8">
                 Join Quiz play room
               </h2>
@@ -123,7 +142,7 @@ export default function QuizDetails() {
                 <Tooltip color="foreground" content="Mysterious Room">
                   <Button
                     color="secondary"
-                    className="px-4 xs:px-6 gap-2 xs:gap-3 min-w-20 xs:min-w-24 h-12 text-small xs:text-medium"
+                    className="px-3 xxs:px-4 xs:px-6 gap-2 xs:gap-3 min-w-20 xs:min-w-24 h-10 sm:h-12 text-small xs:text-medium"
                     onClick={() => handleJoinPublic()}
                     endContent={<GlobeAlt />}
                     isLoading={isLoadingPublicRoomId}
@@ -135,20 +154,21 @@ export default function QuizDetails() {
                 <Tooltip color="foreground" content="Friendly Room">
                   <Button
                     color="primary"
-                    className="px-4 xs:px-6 gap-2 xs:gap-3 min-w-20 xs:min-w-24 h-12 text-small xs:text-medium"
-                    onClick={() => null}
+                    className="px-3 xxs:px-4 xs:px-6 gap-2 xs:gap-3 min-w-20 xs:min-w-24 h-10 sm:h-12 text-small xs:text-medium"
+                    onClick={() => handleCreatePrivate()}
                     endContent={<LockClosedSolid />}
+                    isLoading={isLoadingPrivateRoomId}
                   >
-                    JOIN PRIVATE
+                    CREATE PRIVATE
                   </Button>
                 </Tooltip>
               </div>
             </div>
-          </section>
+          </article>
         ) : (
           <>No quiz data found</>
         )}
       </section>
-    </article>
+    </section>
   );
 }
