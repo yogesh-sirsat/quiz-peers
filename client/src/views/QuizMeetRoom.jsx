@@ -1,12 +1,13 @@
 import { useParams } from "react-router-dom";
 import { useGetQuizByIdQuery } from "../store/api/quizzesApi";
-import { useGetRoomDetailsByIdQuery } from "../store/api/roomsApi";
-import { Link } from "@nextui-org/link";
 import { Button } from "@nextui-org/button";
 import NavbarComponent from "../components/ui/Navbar";
 import { useEffect, useRef } from "react";
+import { Modal, useDisclosure } from "@nextui-org/modal";
+import QuizModalContent from "../components/QuizModalContent";
 
 export default function QuizMeetRoom() {
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const webSocketUrl = import.meta.env.VITE_WEBSOCKET_URL;
   const { quizId, roomId } = useParams();
   const {
@@ -72,10 +73,23 @@ export default function QuizMeetRoom() {
                 radius="full"
                 variant="ghost"
                 className="py-0 px-2 border-1 h-6"
+                onClick={onOpen}
               >
                 View Quiz...
               </Button>
             </p>
+            <Modal
+              size={"xl"}
+              isOpen={isOpen}
+              onOpenChange={onOpenChange}
+              scrollBehavior="inside"
+              placement="center"
+              classNames={{
+                closeButton: "hover:bg-background/30 active:bg-background/25",
+              }}
+            >
+              <QuizModalContent quizData={quizData} />
+            </Modal>
           </div>
         ) : null}
       </article>

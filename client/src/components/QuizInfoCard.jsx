@@ -3,6 +3,7 @@ import { Image } from "@nextui-org/image";
 import { Chip } from "@nextui-org/chip";
 import PropTypes from "prop-types";
 import { Tooltip } from "@nextui-org/react";
+import QuizCategories from "./QuizCategories";
 
 function QuizInfoCard({ quizInfo }) {
   return (
@@ -75,22 +76,7 @@ function QuizInfoCard({ quizInfo }) {
       </CardHeader>
       <CardBody className="overflow-visible py-2 px-4">
         <h3 className="font-semibold text-xl mb-1">{quizInfo?.quiz_name}</h3>
-        <ul className="flex flex-row gap-1">
-          {quizInfo?.categories?.map((category, id) => (
-            <li key={id}>
-              <Chip
-                className="my-1"
-                classNames={{ base: "bg-blue-800/20 text-blue-950" }}
-                color="primary"
-                size="sm"
-                radius="sm"
-                variant="flat"
-              >
-                {category}
-              </Chip>
-            </li>
-          ))}
-        </ul>
+        <QuizCategories categories={quizInfo?.categories} isCard />
       </CardBody>
     </Card>
   );
