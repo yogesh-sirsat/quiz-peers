@@ -1,13 +1,13 @@
 import { Router } from "express";
 import {
   getPublicRoomId,
-  // getPrivateRoomId,
-  // getRoomDetailsById,
+  getIdForPrivateRoom,
+  getRoomDetailsById,
 } from "../controllers/rooms.controller.js";
 const router = Router();
 
 router.get("/get-public-room-id", getPublicRoomId);
-// router.get("/get-private-room-id", getPrivateRoomId);
-// router.get("/:roomId", getRoomDetailsById);
+router.get("/get-id-for-private-room", getIdForPrivateRoom);
+router.get("/:roomId", getRoomDetailsById);
 
 export default router;
