@@ -10,8 +10,8 @@ export const roomsApi = createApi({
     getPublicRoomId: builder.query({
       query: () => `${BASE_URL}/rooms/get-public-room-id`,
     }),
-    getPrivateRoomId: builder.query({
-      query: () => `${BASE_URL}/rooms/get-private-room-id`,
+    getIdForPrivateRoom: builder.query({
+      query: () => `${BASE_URL}/rooms/get-id-for-private-room`,
     }),
     getRoomDetailsById: builder.query({
       query: (roomId) => `${BASE_URL}/rooms/${roomId}`,
@@ -23,6 +23,6 @@ export const roomsApi = createApi({
 // auto-generated based on the defined endpoints
 export const {
   useLazyGetPublicRoomIdQuery,
-  useGetPrivateRoomIdQuery,
+  useLazyGetIdForPrivateRoomQuery,
   useGetRoomDetailsByIdQuery,
 } = roomsApi;
