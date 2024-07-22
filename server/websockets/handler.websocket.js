@@ -2,9 +2,11 @@ import {
   publicWaitingRooms,
   publicPlayingRooms,
   privateWaitingRooms,
-  privatePlayingRooms,
+  privatePlayingRooms
 } from "../websockets/rooms.websocket.js";
 import { handleJoinPublicRoom } from "./public.websocket.js";
+import { handleGeneratePlayerName, handleChangePlayerName } from "./players.websocket.js";
+import { handleLeaveWaitingRoom } from "../websockets/rooms.websocket.js";
 
 let liveConnections = 0;
 
@@ -17,6 +19,15 @@ function setupWebSocketServer(wss) {
         const data = JSON.parse(message);
         console.log("Received: %s", data);
         switch (data?.event) {
+          case "generatePlayerName":
+            handleGeneratePlayerName(ws, data);
+            break;
+          case "changePlayerName":
+            handleChangePlayerName(ws, data);
+            break;
+          case "leaveWaitingRoom":
+            handleLeaveWaitingRoom(ws, data);
+            break;
           case "joinPublicRoom":
             handleJoinPublicRoom(ws, data);
             break;
@@ -41,5 +52,5 @@ function setupWebSocketServer(wss) {
 }
 
 export default {
-  setupWebSocketServer,
+  setupWebSocketServer
 };
