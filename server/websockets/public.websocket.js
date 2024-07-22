@@ -1,7 +1,4 @@
-import {
-  publicWaitingRooms,
-  publicPlayingRooms,
-} from "../websockets/rooms.websocket.js";
+import { publicWaitingRooms, publicPlayingRooms } from "../websockets/rooms.websocket.js";
 
 export function handleJoinPublicRoom(ws, data) {
   console.log(publicPlayingRooms, publicWaitingRooms);
@@ -9,22 +6,22 @@ export function handleJoinPublicRoom(ws, data) {
     ws.send(
       JSON.stringify({
         event: "joinPublicRoomFailed",
-        message: "Oops! Room already started playing Quiz!",
+        message: "Oops! Room already started playing Quiz!"
       })
     );
   } else if (publicWaitingRooms.has(data?.roomId)) {
-    publicWaitingRooms.get(data.roomId).add(data?.playerId);
+    publicWaitingRooms.get(data.roomId).add(data?.playerName);
     ws.send(
       JSON.stringify({
         event: "publicRoomJoined",
-        roomDetails: publicWaitingRooms.get(data?.roomId),
+        roomDetails: publicWaitingRooms.get(data?.roomId)
       })
     );
   } else {
     ws.send(
       JSON.stringify({
         event: "joinPublicRoomFailed",
-        message: "Oops! Room not found!",
+        message: "Oops! Room not found!"
       })
     );
   }

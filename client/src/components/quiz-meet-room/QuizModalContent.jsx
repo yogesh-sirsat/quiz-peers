@@ -3,8 +3,8 @@ import { Image } from "@nextui-org/image";
 import PropTypes from "prop-types";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import QuizStatsFooter from "./QuizStatsFooter";
-import QuizCategories from "./QuizCategories";
+import QuizStatsFooter from "../QuizStatsFooter";
+import QuizCategories from "../QuizCategories";
 
 export default function QuizModalContent({ quizData }) {
   dayjs.extend(relativeTime);

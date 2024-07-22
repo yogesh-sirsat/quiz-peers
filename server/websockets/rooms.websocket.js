@@ -6,6 +6,18 @@ export const publicPlayingRooms = new Map();
 export const privateWaitingRooms = new Map();
 export const privatePlayingRooms = new Map();
 
+export function handleLeaveWaitingRoom(ws, data) {
+  try {
+    if (data?.isRoomPublic) {
+      publicWaitingRooms.get(data?.roomId).delete(data?.playerName);
+    } else {
+      privateWaitingRooms.get(data?.roomId).delete(data?.playerName);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 export function getRoomDetails(roomId) {
   if (publicWaitingRooms.has(roomId)) {
     return publicWaitingRooms.get(roomId);
@@ -32,9 +44,10 @@ export function isRoomIdInUse(roomId) {
 }
 
 export function getValidGeneratedRoomId(isPublic = true) {
-  // Try 1000 times to find a room id that is not in use yet
+  // Try 1 Million times to find a room id that is not in use.
   let tries = 0;
-  while (tries < 1000) {
+  const million = 1000000;
+  while (tries < million) {
     const roomId = generateRandomRoomId();
     if (!isRoomIdInUse(roomId)) {
       if (isPublic) {
@@ -46,13 +59,11 @@ export function getValidGeneratedRoomId(isPublic = true) {
     }
     tries += 1;
   }
+
   if (isPublic) {
     throw new HttpError("No room found to join, please try again!", 404);
   }
-  throw new HttpError(
-    "Could not create a private room, please try again!",
-    404
-  );
+  throw new HttpError("Could not create a private room, please try again!", 404);
 }
 
 export function getValidPublicRoomId() {
