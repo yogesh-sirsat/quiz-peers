@@ -1,9 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetQuizByIdQuery } from "../store/api/quizzesApi";
-import {
-  useLazyGetPublicRoomIdQuery,
-  useLazyGetIdForPrivateRoomQuery,
-} from "../store/api/roomsApi";
+import { useLazyGetPublicRoomIdQuery, useLazyGetIdForPrivateRoomQuery } from "../store/api/roomsApi";
 import NavbarComponent from "../components/ui/Navbar";
 import { Image } from "@nextui-org/image";
 import { Button } from "@nextui-org/button";
@@ -21,10 +18,8 @@ export default function QuizDetails() {
   dayjs.extend(relativeTime);
   // Using a query hook automatically fetches data and returns query values
   const { data, error, isLoading } = useGetQuizByIdQuery(quizId);
-  const [triggerPublicRoomId, { isLoading: isLoadingPublicRoomId }] =
-    useLazyGetPublicRoomIdQuery();
-  const [triggerPrivateRoomId, { isLoading: isLoadingPrivateRoomId }] =
-    useLazyGetIdForPrivateRoomQuery();
+  const [triggerPublicRoomId, { isLoading: isLoadingPublicRoomId }] = useLazyGetPublicRoomIdQuery();
+  const [triggerPrivateRoomId, { isLoading: isLoadingPrivateRoomId }] = useLazyGetIdForPrivateRoomQuery();
 
   const handleJoinPublic = async () => {
     try {
@@ -33,7 +28,7 @@ export default function QuizDetails() {
         throw new Error(response.error?.data?.message);
       }
       if (response.data) {
-        navigate(`/quiz/${quizId}/${response.data.roomId}`);
+        navigate(`/quiz/${quizId}/${response.data.roomId}?public=true`);
       }
     } catch (error) {
       alert(error.message);
@@ -47,7 +42,7 @@ export default function QuizDetails() {
         throw new Error(response.error?.data?.message);
       }
       if (response.data) {
-        navigate(`/quiz/${quizId}/${response.data.roomId}`);
+        navigate(`/quiz/${quizId}/${response.data.roomId}?public=false`);
       }
     } catch (error) {
       alert(error.message);
@@ -66,22 +61,19 @@ export default function QuizDetails() {
           <article className="text-foreground flex flex-col items-center bg-background/60 shadow-2xl p-3 xxs:p-5 xs:p-7 rounded-2xl">
             <Image isBlurred isZoomed src={data?.cover_image_url} />
             <div className="w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] flex flex-col gap-2 pt-4">
-              <h1 className="font-semibold text-2xl xs:text-3xl sm:text-4xl break-words">
-                {data?.quiz_name}
-              </h1>
+              <h1 className="font-semibold text-2xl xs:text-3xl sm:text-4xl break-words">{data?.quiz_name}</h1>
 
               <p className="text-sm xs:text-base">{data?.description}</p>
               <QuizCategories categories={data?.categories} />
               <p className="text-xs xs:text-sm">
-                Created {dayjs(data?.created_at).fromNow()} | Last updated{" "}
-                {dayjs(data?.updated_at).fromNow()}
+                Created {dayjs(data?.created_at).fromNow()} | Last updated {dayjs(data?.updated_at).fromNow()}
               </p>
               <br></br>
               <QuizStatsFooter
                 {...{
                   successRate: data?.success_rate,
                   contestantsCount: data?.contestants_count,
-                  totalQuestions: data?.total_questions,
+                  totalQuestions: data?.total_questions
                 }}
               />
               <Divider className="my-2 md:my-4" />

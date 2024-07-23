@@ -1,4 +1,5 @@
 import { generateRandomRoomId } from "../utils/rooms.utils.js";
+import { getGeneratePlayerName } from "./players.websocket.js";
 import HttpError from "../errors/app.error.js";
 
 export const publicWaitingRooms = new Map();
@@ -15,6 +16,36 @@ export function handleLeaveWaitingRoom(ws, data) {
     }
   } catch (error) {
     console.error(error);
+  }
+}
+
+export function handleJoinRoom(ws, data) {
+  try {
+    ws.peerId = data?.peerId;
+    ws.playerName = data?.playerName;
+    ws.roomId = data?.roomId;
+    ws.isRoomPublic = data?.isRoomPublic;
+
+    const room = data?.isRoomPublic
+      ? publicWaitingRooms.get(data?.roomId)
+      : privateWaitingRooms.get(data?.roomId);
+    if (!room) {
+      throw new Error("Oops, Room not found!");
+    }
+    const playerName = getGeneratePlayerName(room);
+    room.set(data?.peerId, { peerId: data?.peerId, playerName, ws });
+    ws.send(
+      JSON.stringify({
+        event: "joinRoomSuccess",
+        playerName,
+        roomPlayers: [...room.values()]
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    ws.send(
+      JSON.stringify({ event: "joinRoomFailed", message: error.message })
+    );
   }
 }
 
@@ -51,9 +82,9 @@ export function getValidGeneratedRoomId(isPublic = true) {
     const roomId = generateRandomRoomId();
     if (!isRoomIdInUse(roomId)) {
       if (isPublic) {
-        publicWaitingRooms.set(roomId, new Set());
+        publicWaitingRooms.set(roomId, new Map());
       } else {
-        privateWaitingRooms.set(roomId, new Set());
+        privateWaitingRooms.set(roomId, new Map());
       }
       return roomId;
     }
@@ -63,7 +94,10 @@ export function getValidGeneratedRoomId(isPublic = true) {
   if (isPublic) {
     throw new HttpError("No room found to join, please try again!", 404);
   }
-  throw new HttpError("Could not create a private room, please try again!", 404);
+  throw new HttpError(
+    "Could not create a private room, please try again!",
+    404
+  );
 }
 
 export function getValidPublicRoomId() {

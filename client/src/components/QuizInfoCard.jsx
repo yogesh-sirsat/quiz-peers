@@ -26,7 +26,7 @@ function QuizInfoCard({ quizInfo }) {
                 className="absolute z-10 bottom-2 left-2 min-w-4 min-h-4 cursor-pointer"
                 classNames={{
                   base: "bg-green-400/60 text-black border-1 border-black/50",
-                  content: "font-medium",
+                  content: "font-medium"
                 }}
                 radius="sm"
                 size="sm"
@@ -45,7 +45,7 @@ function QuizInfoCard({ quizInfo }) {
                 className="min-w-4 min-h-4 cursor-pointer"
                 classNames={{
                   base: "bg-teal-400/50 text-black border-1 border-black/50",
-                  content: "font-medium",
+                  content: "font-medium"
                 }}
                 radius="sm"
                 size="sm"
@@ -62,7 +62,7 @@ function QuizInfoCard({ quizInfo }) {
                 className="min-w-4 min-h-4 cursor-pointer"
                 classNames={{
                   base: "bg-orange-400/50 text-black border-1 border-black/50",
-                  content: "font-medium",
+                  content: "font-medium"
                 }}
                 radius="sm"
                 size="sm"
@@ -83,7 +83,7 @@ function QuizInfoCard({ quizInfo }) {
 }
 
 QuizInfoCard.propTypes = {
-  quizInfo: PropTypes.object,
+  quizInfo: PropTypes.object
 };
 
 export default QuizInfoCard;
