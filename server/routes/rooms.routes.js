@@ -1,9 +1,6 @@
 import { Router } from "express";
-import {
-  getPublicRoomId,
-  getIdForPrivateRoom,
-  getRoomDetailsById,
-} from "../controllers/rooms.controller.js";
+import { getIdForPrivateRoom, getPublicRoomId, getRoomDetailsById } from "../controllers/rooms.controller.js";
+
 const router = Router();
 
 router.get("/get-public-room-id", getPublicRoomId);

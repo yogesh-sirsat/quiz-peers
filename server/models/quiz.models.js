@@ -33,7 +33,7 @@ export async function getQuizByIdData(quizId) {
       qz.created_at,
       qz.updated_at,
       qz.contestants_count,
-      qz.success_rate,
+      ROUND(qz.success_rate) success_rate,
       Count(qq.question_id) questions_count,
       array_agg (DISTINCT qc.category_name) categories 
     FROM

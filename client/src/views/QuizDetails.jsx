@@ -1,6 +1,6 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useGetQuizByIdQuery } from "../store/api/quizzesApi";
-import { useLazyGetPublicRoomIdQuery, useLazyGetIdForPrivateRoomQuery } from "../store/api/roomsApi";
+import { useLazyGetIdForPrivateRoomQuery, useLazyGetPublicRoomIdQuery } from "../store/api/roomsApi";
 import NavbarComponent from "../components/ui/Navbar";
 import { Image } from "@nextui-org/image";
 import { Button } from "@nextui-org/button";

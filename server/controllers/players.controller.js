@@ -1,5 +1,3 @@
-import HttpAppError from "../errors/app.error.js";
-
 // export async function getRandomPlayerName(req, res, next) {
 //   try {
 //     const { isRoomPublic } = req.query;

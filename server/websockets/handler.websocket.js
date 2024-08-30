@@ -1,14 +1,5 @@
-import {
-  publicWaitingRooms,
-  publicPlayingRooms,
-  privateWaitingRooms,
-  privatePlayingRooms
-} from "../websockets/rooms.websocket.js";
+import { handleJoinRoom, handleLeaveWaitingRoom } from "../websockets/rooms.websocket.js";
 import { handleChangePlayerName } from "./players.websocket.js";
-import {
-  handleLeaveWaitingRoom,
-  handleJoinRoom
-} from "../websockets/rooms.websocket.js";
 
 let liveConnections = 0;
 

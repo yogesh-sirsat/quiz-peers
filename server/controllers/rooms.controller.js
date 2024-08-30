@@ -1,9 +1,4 @@
-import HttpAppError from "../errors/app.error.js";
-import {
-  getValidPublicRoomId,
-  getValidGeneratedRoomId,
-  getRoomDetails,
-} from "../websockets/rooms.websocket.js";
+import { getRoomDetails, getValidGeneratedRoomId, getValidPublicRoomId } from "../websockets/rooms.websocket.js";
 
 export async function getPublicRoomId(req, res, next) {
   try {
