@@ -1,4 +1,4 @@
-import { publicWaitingRooms, publicPlayingRooms } from "../websockets/rooms.websocket.js";
+import { publicPlayingRooms, publicWaitingRooms } from "../websockets/rooms.websocket.js";
 
 export function handleJoinPublicRoom(ws, data) {
   console.log(publicPlayingRooms, publicWaitingRooms);

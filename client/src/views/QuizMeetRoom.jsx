@@ -1,16 +1,20 @@
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { Button } from "@nextui-org/button";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Button, ButtonGroup } from "@nextui-org/button";
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownSection, DropdownItem } from "@nextui-org/dropdown";
 import NavbarComponent from "../components/ui/Navbar";
 import { useEffect, useRef, useState } from "react";
 import QuizNameCard from "../components/quiz-meet-room/QuizNameCard";
 import { Modal, useDisclosure } from "@nextui-org/modal";
 import PlayerNameModal from "../components/quiz-meet-room/PlayerNameModal";
-import { Microphone } from "../components/icons";
+import { ChevronDown, Mic } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import Peer from "peerjs";
+import MEDIA_CONSTRAINTS from "../config/mediaConfig.js";
+import AudioDeviceManager from "../components/quiz-meet-room/AudioDeviceManager.jsx";
 
 export default function QuizMeetRoom() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [selectedAudioDevice, setSelectedAudioDevice] = useState(null);
   const webSocketUrl = import.meta.env.VITE_WEBSOCKET_URL;
   const navigate = useNavigate();
   const { quizId, roomId } = useParams();
@@ -33,6 +37,10 @@ export default function QuizMeetRoom() {
       navigate("/pagenotfound");
     }
   }, [navigate, searchParams]);
+
+  useEffect(() => {
+
+  });
 
   // WebSocket connection setup
   useEffect(() => {
@@ -100,7 +108,8 @@ export default function QuizMeetRoom() {
 
     peerRef.current.on("call", (call) => {
       call.answer();
-      call.on("stream", (remoteStream) => {});
+      call.on("stream", (remoteStream) => {
+      });
     });
 
     wsRef.current.onclose = () => {
@@ -131,22 +140,16 @@ export default function QuizMeetRoom() {
     <section className="min-w-screen">
       <NavbarComponent />
 
-      <article className="mt-4 xs:mt-6 mx-3 xs:mx-4 md:mx-auto w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] gap-2 flex flex-col">
+      <article
+        className="mt-4 xs:mt-6 mx-3 xs:mx-4 md:mx-auto w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] gap-2 flex flex-col">
         <QuizNameCard quizId={quizId} />
-        <section className="flex flex-col gap-2 text-foreground bg-background/60 shadow-2xl p-3 xxs:p-5 xs:p-7 rounded-2xl">
+        <section
+          className="flex flex-col gap-2 text-foreground bg-background/60 shadow-2xl p-3 xxs:p-5 xs:p-7 rounded-2xl">
           <h1 className="text-xl xs:text-2xl font-semibold">
             Quiz Room Players
           </h1>
           <div className="flex flex-row gap-2 p-2 h-16 items-center bg-[#39004E] text-background shadow-lg rounded-xl">
-            <Button
-              // color="primary"
-              onClick={() => {
-                onOpenChange(true);
-              }}
-              isIconOnly
-            >
-              <Microphone />
-            </Button>
+            <AudioDeviceManager selectedAudioDevice={selectedAudioDevice} setSelectedAudioDevice={setSelectedAudioDevice} />
             <h2>{playerName}</h2>
           </div>
         </section>
@@ -164,5 +167,6 @@ export default function QuizMeetRoom() {
         <PlayerNameModal />
       </Modal>
     </section>
-  );
+  )
+    ;
 }

@@ -1,17 +1,5 @@
-import { useState, useEffect } from "react";
-import {
-  Navbar,
-  NavbarBrand,
-  NavbarContent,
-  NavbarItem,
-  NavbarMenuToggle,
-  Link,
-  // DropdownItem,
-  // DropdownTrigger,
-  // Dropdown,
-  // DropdownMenu,
-  // Avatar,
-} from "@nextui-org/react";
+import { useEffect, useState } from "react";
+import { Link, Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@nextui-org/react";
 import { useNavigate } from "react-router-dom";
 
 export default function NavbarComponent() {

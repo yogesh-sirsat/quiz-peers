@@ -1,4 +1,4 @@
-import { PLAYER_NAMES_PREFIX, PLAYER_NAMES_POSTFIX } from "../constants/players.constant.js";
+import { PLAYER_NAMES_POSTFIX, PLAYER_NAMES_PREFIX } from "../constants/players.constant.js";
 
 export function generateRandomPlayerName() {
   const playersNamesPrefixLength = PLAYER_NAMES_PREFIX.length;

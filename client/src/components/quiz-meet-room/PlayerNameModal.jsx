@@ -1,4 +1,4 @@
-import { ModalContent, ModalHeader, ModalBody } from "@nextui-org/modal";
+import { ModalBody, ModalContent, ModalHeader } from "@nextui-org/modal";
 
 export default function PlayerNameModal() {
   return (

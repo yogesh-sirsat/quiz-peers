@@ -4,7 +4,7 @@ import { NextUIProvider } from "@nextui-org/react";
 import App from "./App.jsx";
 import { store } from "./store/store.js";
 import { Provider } from "react-redux";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import "./index.css";
 import QuizDetails from "./views/QuizDetails.jsx";
 import QuizMeetRoom from "./views/QuizMeetRoom.jsx";

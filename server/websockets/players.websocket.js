@@ -1,4 +1,4 @@
-import { publicWaitingRooms, privateWaitingRooms } from "./rooms.websocket.js";
+import { privateWaitingRooms, publicWaitingRooms } from "./rooms.websocket.js";
 import { generateRandomPlayerName } from "../utils/players.utils.js";
 import { nanoid } from "nanoid";
 
