@@ -1,15 +1,17 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
-import { quizzesApi } from "../store/api/quizzesApi";
-import { roomsApi } from "../store/api/roomsApi";
+import { quizzesApi } from "./api/quizzesApi.js";
+import { roomsApi } from "./api/roomsApi.js";
+import roomReducer from "./features/roomSlice.js";
 
 export const store = configureStore({
   reducer: {
     [quizzesApi.reducerPath]: quizzesApi.reducer,
     [roomsApi.reducerPath]: roomsApi.reducer,
+    room: roomReducer
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(quizzesApi.middleware, roomsApi.middleware),
+    getDefaultMiddleware({ serializableCheck: false }).concat(quizzesApi.middleware, roomsApi.middleware)
 });
 
 // optional, but required for refetchOnFocus/refetchOnReconnect behaviors

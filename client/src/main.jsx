@@ -11,7 +11,7 @@ import QuizMeetRoom from "./views/QuizMeetRoom.jsx";
 import PageNotFound from "./views/PageNotFound.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <Provider store={store}>
       <NextUIProvider>
         <Router>
@@ -24,5 +24,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         </Router>
       </NextUIProvider>
     </Provider>
-  </React.StrictMode>
+  // </React.StrictMode>
 );

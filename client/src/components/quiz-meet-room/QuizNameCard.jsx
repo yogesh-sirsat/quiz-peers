@@ -19,7 +19,7 @@ export default function QuizNameCard({ quizId }) {
       ) : quizLoading ? (
         <p>Loading...</p>
       ) : quizData ? (
-        <div className="flex flex-col gap-2 text-foreground bg-background/60 shadow-2xl p-3 xxs:p-5 xs:p-7 rounded-2xl">
+        <div className="flex flex-col gap-2 text-foreground bg-background/60 shadow-2xl p-3 xxs:p-4 xs:p-6 rounded-2xl">
           <h1 className="text-xl xs:text-2xl sm:text-3xl font-semibold">
             {quizData?.quiz_name}
           </h1>
@@ -30,7 +30,7 @@ export default function QuizNameCard({ quizId }) {
               color="secondary"
               radius="full"
               variant="ghost"
-              className="py-0 px-2 border-1 h-6"
+              className="py-0 px-2 border-1 h-6 ml-2"
               onClick={onOpen}
             >
               View Quiz...

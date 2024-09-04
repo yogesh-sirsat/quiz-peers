@@ -16,7 +16,7 @@ function setupWebSocketServer(wss) {
             handleChangePlayerName(ws, data);
             break;
           case "leaveWaitingRoom":
-            handleLeaveWaitingRoom(ws, data);
+            handleLeaveWaitingRoom(ws);
             break;
           case "joinRoom":
             handleJoinRoom(ws, data);
@@ -27,6 +27,7 @@ function setupWebSocketServer(wss) {
       });
 
       ws.on("close", () => {
+        handleLeaveWaitingRoom(ws);
         liveConnections--;
         console.log("WebSocket connection closed: ", liveConnections);
       });

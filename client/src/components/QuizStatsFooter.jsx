@@ -53,5 +53,5 @@ export default function QuizStatsFooter({
 QuizStatsFooter.propTypes = {
   successRate: PropTypes.string,
   contestantsCount: PropTypes.number,
-  questionsCount: PropTypes.number,
+  questionsCount: PropTypes.string,
 };

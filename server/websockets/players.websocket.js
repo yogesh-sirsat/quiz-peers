@@ -26,6 +26,7 @@ export function handleChangePlayerName(ws, data) {
     ws.send(
       JSON.stringify({
         event: "changePlayerNameFailed",
+        responseCode: "ROOM NOT FOUND",
         message: "Oops! Room not found!"
       })
     );
@@ -35,6 +36,7 @@ export function handleChangePlayerName(ws, data) {
     ws.send(
       JSON.stringify({
         event: "changePlayerNameFailed",
+        responseCode: "PLAYER NOT FOUND",
         message: "Oops! Player not found!"
       })
     );
@@ -45,7 +47,7 @@ export function handleChangePlayerName(ws, data) {
   ws.send(
     JSON.stringify({
       event: "playerNameChanged",
-      succss: true,
+      success: true,
       newPlayerName: data?.newPlayerName
     })
   );

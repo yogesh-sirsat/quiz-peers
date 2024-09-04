@@ -19,3 +19,27 @@ body {
   min-height: 100vh;
   min-width: 100vw;
 }
+
+/* Webkit (Chrome and Safari) */
+/* Style the scrollbar track */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+/* Style the scrollbar thumb */
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 6px;
+}
+
+/* Firefox */
+/* Style the scrollbar track */
+::-moz-scrollbar {
+  width: 8px;
+}
+
+/* Style the scrollbar thumb */
+::-moz-scrollbar-thumb {
+  background: #888;
+  border-radius: 6px;
+}

@@ -2,8 +2,16 @@ import { Button, ButtonGroup, Dropdown, DropdownItem, DropdownMenu, DropdownTrig
 import { ChevronDown, Mic, MicOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
+import { useDispatch, useSelector } from "react-redux";
 
-export default function AudioDeviceManager({ selectedAudioDevice, setSelectedAudioDevice }) {
+export default function AudioDeviceManager({
+                                             selectedAudioDevice,
+                                             setSelectedAudioDevice,
+                                             isLocalPlayerMute,
+                                             setIsLocalPlayerMute
+                                           }) {
+  const dispatch = useDispatch();
+  const roomPlayers = useSelector((state) => state.room.roomPlayers);
   const [audioDevices, setAudioDevices] = useState(null);
 
   useEffect(() => {
@@ -27,14 +35,31 @@ export default function AudioDeviceManager({ selectedAudioDevice, setSelectedAud
     setSelectedAudioDevice(value);
   };
 
+  const handleLocalPlayerMuteStatus = (muteStatus) => {
+    setIsLocalPlayerMute(muteStatus);
+    Object.entries(roomPlayers).forEach(([key, value]) => {
+      value?.dataConnection?.send({
+        type: "muteStatus",
+        muteStatus,
+        peerId: key
+      });
+    });
+  };
+
   return (<ButtonGroup variant={"flat"} size={"sm"}>
     <Button
-      // onClick={() => {
-      //   onOpenChange(true);
-      // }}
+      onClick={() => {
+        handleLocalPlayerMuteStatus(!isLocalPlayerMute);
+      }}
       isIconOnly
     >
-      <Mic size={22} />
+      {
+        isLocalPlayerMute ? (
+          <MicOff size={22} />
+        ) : (
+          <Mic size={22} />
+        )
+      }
     </Button>
     <Dropdown placement="bottom" classNames={{
       content: "bg-[#39004E] border border-background/60 "
@@ -48,9 +73,9 @@ export default function AudioDeviceManager({ selectedAudioDevice, setSelectedAud
       </DropdownTrigger>
       <DropdownMenu
         aria-label="Audio device options"
-        selectedKeys={selectedAudioDevice}
+        selectedKeys={[selectedAudioDevice]}
         selectionMode="single"
-        onSelectionChange={handleAudioChange}
+        onAction={handleAudioChange}
         className="max-w-[300px]"
         itemClasses={{
           base: [
@@ -73,5 +98,7 @@ export default function AudioDeviceManager({ selectedAudioDevice, setSelectedAud
 
 AudioDeviceManager.propTypes = {
   selectedAudioDevice: PropTypes.string,
-  setSelectedAudioDevice: PropTypes.func
+  setSelectedAudioDevice: PropTypes.func,
+  isLocalPlayerMute: PropTypes.bool,
+  setIsLocalPlayerMute: PropTypes.func
 };

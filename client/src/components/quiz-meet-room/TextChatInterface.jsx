@@ -11,14 +11,52 @@ import {
 import { MessageSquareText, SendHorizontal } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import TextMessageCard from "./TextMessageCard.jsx";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import PropTypes from "prop-types";
 import { addChatMessage } from "../../store/features/roomSlice.js";
 
-export default function TextChatInterface({ playerName }) {
+export default function TextChatInterface({ localPeerId, localPlayerName }) {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const chatMessages = useSelector((state) => state.room.chatMessages);
+  const roomPlayers = useSelector((state) => state.room.roomPlayers);
   const [currentText, setCurrentText] = useState("");
+
+  const handleSendMessage = (text) => {
+    try {
+      dispatch(addChatMessage({
+        sender: localPlayerName,
+        peerId: localPeerId,
+        text: text,
+        isPlayer: true,
+        timeStamp: Date.now()
+      }));
+      Object.entries(roomPlayers).forEach(([key, value]) => {
+        if (value?.dataConnection && value?.dataConnection?.open) {
+          value?.dataConnection?.send({
+            type: "chatMessage",
+            sender: localPlayerName,
+            peerId: key,
+            text,
+            isPlayer: true,
+            timeStamp: Date.now()
+          });
+        } else {
+          console.log("Not connected to data connection");
+        }
+      });
+      setCurrentText("");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const sendButtonDisabled = useMemo(() => {
+    if (!currentText) {
+      return true;
+    }
+    return currentText.trim().length === 0;
+  }, [currentText]);
+
   return (
     <>
       <Button isIconOnly variant={"flat"} radius={"sm"} onClick={onOpen}>
@@ -49,14 +87,8 @@ export default function TextChatInterface({ playerName }) {
           </ModalBody>
           <ModalFooter>
             <Input placeholder="Enter your message" onValueChange={setCurrentText} value={currentText} />
-            <Button isIconOnly variant={"flat"} onClick={() => {
-              dispatch(addChatMessage({
-                sender: playerName,
-                isPlayer: true,
-                text: currentText,
-                timeStamp: Date.now()
-              }));
-              setCurrentText("");
+            <Button isIconOnly variant={"flat"} isDisabled={sendButtonDisabled} onClick={() => {
+              handleSendMessage(currentText);
             }}>
               <SendHorizontal size={22} />
             </Button>
@@ -66,3 +98,8 @@ export default function TextChatInterface({ playerName }) {
     </>
   );
 }
+
+TextChatInterface.propTypes = {
+  localPeerId: PropTypes.string,
+  localPlayerName: PropTypes.string
+};
