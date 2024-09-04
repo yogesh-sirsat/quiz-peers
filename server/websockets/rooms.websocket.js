@@ -7,12 +7,31 @@ export const publicPlayingRooms = new Map();
 export const privateWaitingRooms = new Map();
 export const privatePlayingRooms = new Map();
 
-export function handleLeaveWaitingRoom(ws, data) {
+function emitPlayerLeftWaitingRoom(roomPlayers, peerId, playerName) {
   try {
-    if (data?.isRoomPublic) {
-      publicWaitingRooms.get(data?.roomId).delete(data?.playerName);
+    roomPlayers.forEach((player) => {
+      player?.ws.send(JSON.stringify({
+        event: "playerLeftWaitingRoom",
+        peerId,
+        playerName
+      }));
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export function handleLeaveWaitingRoom(ws) {
+  try {
+    if (!ws?.roomId || !ws?.peerId) {
+      return;
+    }
+    if (ws?.isRoomPublic) {
+      publicWaitingRooms.get(ws?.roomId).delete(ws?.peerId);
+      emitPlayerLeftWaitingRoom(publicWaitingRooms.get(ws?.roomId), ws?.peerId, ws?.playerName);
     } else {
-      privateWaitingRooms.get(data?.roomId).delete(data?.playerName);
+      privateWaitingRooms.get(ws?.roomId).delete(ws?.peerId);
+      emitPlayerLeftWaitingRoom(privateWaitingRooms.get(ws?.roomId), ws?.peerId, ws?.playerName);
     }
   } catch (error) {
     console.error(error);
@@ -26,26 +45,20 @@ export function handleJoinRoom(ws, data) {
     ws.roomId = data?.roomId;
     ws.isRoomPublic = data?.isRoomPublic;
 
-    const room = data?.isRoomPublic
-      ? publicWaitingRooms.get(data?.roomId)
-      : privateWaitingRooms.get(data?.roomId);
+    const room = data?.isRoomPublic ? publicWaitingRooms.get(data?.roomId) : privateWaitingRooms.get(data?.roomId);
     if (!room) {
       throw new Error("Oops, Room not found!");
     }
     const playerName = getGeneratePlayerName(room);
-    room.set(data?.peerId, { peerId: data?.peerId, playerName, ws });
-    ws.send(
-      JSON.stringify({
-        event: "joinRoomSuccess",
-        playerName,
-        roomPlayers: [...room.values()]
-      })
-    );
+    room.set(data?.peerId, { playerName, ws });
+    ws.send(JSON.stringify({
+      event: "joinRoomSuccess",
+      playerName,
+      roomPlayers: Array.from(room, ([key, value]) => ({ peerId: key, playerName: value?.playerName }))
+    }));
   } catch (error) {
     console.error(error);
-    ws.send(
-      JSON.stringify({ event: "joinRoomFailed", message: error.message })
-    );
+    ws.send(JSON.stringify({ event: "joinRoomFailed", message: error.message }));
   }
 }
 
@@ -66,12 +79,7 @@ export function getRoomDetails(roomId) {
 }
 
 export function isRoomIdInUse(roomId) {
-  return (
-    publicWaitingRooms.has(roomId) ||
-    privateWaitingRooms.has(roomId) ||
-    publicPlayingRooms.has(roomId) ||
-    privatePlayingRooms.has(roomId)
-  );
+  return (publicWaitingRooms.has(roomId) || privateWaitingRooms.has(roomId) || publicPlayingRooms.has(roomId) || privatePlayingRooms.has(roomId));
 }
 
 export function getValidGeneratedRoomId(isPublic = true) {
@@ -94,10 +102,7 @@ export function getValidGeneratedRoomId(isPublic = true) {
   if (isPublic) {
     throw new HttpError("No room found to join, please try again!", 404);
   }
-  throw new HttpError(
-    "Could not create a private room, please try again!",
-    404
-  );
+  throw new HttpError("Could not create a private room, please try again!", 404);
 }
 
 export function getValidPublicRoomId() {

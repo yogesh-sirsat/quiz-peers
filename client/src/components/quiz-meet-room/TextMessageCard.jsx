@@ -27,5 +27,5 @@ export default function TextMessageCard({ message }) {
 }
 
 TextMessageCard.propTypes = {
-  message: PropTypes.array
+  message: PropTypes.object
 };

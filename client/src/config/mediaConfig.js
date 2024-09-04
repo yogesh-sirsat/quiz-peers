@@ -6,4 +6,4 @@ const MEDIA_CONSTRAINTS = {
   }
 };
 
-export default { MEDIA_CONSTRAINTS };
+export { MEDIA_CONSTRAINTS };
