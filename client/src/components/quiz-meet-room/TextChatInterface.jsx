@@ -24,6 +24,8 @@ export default function TextChatInterface({ localPeerId, localPlayerName }) {
 
   const handleSendMessage = (text) => {
     try {
+      console.log("sending text to data connection", text);
+
       dispatch(addChatMessage({
         sender: localPlayerName,
         peerId: localPeerId,
@@ -31,8 +33,13 @@ export default function TextChatInterface({ localPeerId, localPlayerName }) {
         isPlayer: true,
         timeStamp: Date.now()
       }));
+      console.log("sending text to data connection", text);
+
       Object.entries(roomPlayers).forEach(([key, value]) => {
+        console.log(key)
+        console.log(value)
         if (value?.dataConnection && value?.dataConnection?.open) {
+          console.log("sending text to data connection", text);
           value?.dataConnection?.send({
             type: "chatMessage",
             sender: localPlayerName,

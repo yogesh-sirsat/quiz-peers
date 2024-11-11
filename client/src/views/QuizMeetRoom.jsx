@@ -91,37 +91,48 @@ export default function QuizMeetRoom() {
     }
   }, [dispatch]);
 
-  const handleJoinRoomSuccess = useCallback((data, localPeerId) => {
+  const handlePlayerDataConnection = useCallback((player, localPlayerName) => {
+    // Check if the data connection already exists before creating a new one
+    let dataConnection = peerRef.current.connections[player?.peerId]?.find((conn) => conn.type === "data");
+    if (!dataConnection) {
+      console.log("Creating data connection");
+      dataConnection = peerRef.current.connect(player?.peerId, {
+        reliable: true,
+        metadata: { playerName: localPlayerName }
+      });
+    }
+    console.log("after dataconnection creation");
+    dataConnection.on("open", () => {
+      dataConnection.send("hello!");
+      console.log("Data connection is opened -> ");
+      console.log(dataConnection);
+      dispatch(addUpdateRoomPlayer({
+        key: player?.peerId, value: {
+          dataConnection, playerName: player?.playerName, isMute: false
+        }
+      }));
+      console.log("after adding to room player");
+      dataConnection.on("data", (data) => {
+        handleConnectionData(data);
+      });
+      dataConnection.on("close", () => {
+        console.log(`${player?.playerName}'s data connection got closed! PeerId: ${player?.peerId}`);
+      });
+      dataConnection.on("error", () => {
+        console.log(`${player?.playerName}'s data connection error! PeerId: ${player?.peerId}`);
+      });
+    });
+  }, [dispatch, handleConnectionData]);
+
+  const handleJoinRoomSuccess = useCallback((roomData, localPeerId, localPlayerName) => {
     try {
-      console.log(data);
-      data?.roomPlayers?.forEach((player) => {
+      console.log(roomData);
+      roomData?.roomPlayers?.forEach((player) => {
         if (player?.peerId === localPeerId) {  // Avoid calling to self
           return;
         }
         console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", player);
-        // Check if the data connection already exists before creating a new one
-        let dataConnection = peerRef.current.connections[player?.peerId]?.find((conn) => conn.type === "data");
-        if (!dataConnection) {
-          dataConnection = peerRef.current.connect(player?.peerId, { reliable: true });
-        }
-        dataConnection.on("open", () => {
-          dataConnection.send("hello!");
-          console.log("Data connection is opened -> ", dataConnection);
-          dispatch(addUpdateRoomPlayer({
-                key: player?.peerId, value: {
-              dataConnection, playerName: player?.playerName, isMute: false
-            }
-          }));
-          dataConnection.on("data", (data) => {
-            handleConnectionData(data);
-          });
-          dataConnection.on("close", () => {
-            console.log(`${player?.playerName}'s data connection got closed! PeerId: ${player?.peerId}`);
-          });
-          dataConnection.on("error", () => {
-            console.log(`${player?.playerName}'s data connection error! PeerId: ${player?.peerId}`);
-          });
-        });
+        handlePlayerDataConnection(player, localPlayerName);
 
         // Check if the media connection already exists before creating a new one
         // let mediaConnection = peerRef.current.connections[player?.peerId]?.find((conn) => conn.type === "media");
@@ -146,7 +157,7 @@ export default function QuizMeetRoom() {
     } catch (e) {
       console.error(e);
     }
-  }, [dispatch, handleConnectionData]);
+  }, [handlePlayerDataConnection]);
 
   // WebSocket connection setup
   useEffect(() => {
@@ -182,70 +193,32 @@ export default function QuizMeetRoom() {
       console.log(id);
     });
 
-    wsRef.current.onopen = () => {
-      try {
-        console.log("Connected to web socket");
-        wsRef.current.send(JSON.stringify({
-          roomId, quizId, peerId, event: "joinRoom", isRoomPublic
-        }));
-      } catch (e) {
-        console.log(e);
-      }
-    };
-
-    wsRef.current.onmessage = (event) => {
-      console.log(event);
-      const data = JSON.parse(event.data);
-      console.log(data);
-      switch (data?.event) {
-        case "roomError":
-          setRoomError(data?.message);
-          break;
-        case "joinRoomSuccess":
-          setPlayerName(data?.playerName);
-          handleJoinRoomSuccess(data, peerId);
-          break;
-        case "joinRoomFailed":
-          alert(data?.message);
-          navigate("/quiz/" + quizId);
-          break;
-        case "playerLeftWaitingRoom":
-          dispatch(removeRoomPlayer(data?.peerId));
-          dispatch(addChatMessage({
-            sender: "System Bot",
-            isPlayer: false,
-            text: `${data?.playerName} left the room.`,
-            timeStamp: Date.now()
-          }));
-          break;
-        default:
-          break;
-      }
-    };
-
     peerRef.current.on("connection", (conn) => {
-      console.log("connection recieved from: ", conn?.peer);
-      dispatch(addUpdateRoomPlayer({
-        key: conn.peer,
-        value: { dataConnection: conn, playerName: conn?.metadata?.playerName, isMute: false }
-      }));
-      dispatch(addChatMessage({
-        sender: "System Bot",
-        isPlayer: false,
-        text: `${conn?.metadata?.playerName} joined the room!`,
-        timeStamp: Date.now()
-      }));
-      conn.on("data", (data) => {
-        handleConnectionData(data);
-      });
+      setTimeout(() => {
+        console.log("connection recieved from: ", conn?.peer);
+        console.log(conn.metadata);
+        dispatch(addUpdateRoomPlayer({
+          key: conn.peer,
+          value: { dataConnection: conn, playerName: conn?.metadata?.playerName, isMute: false }
+        }));
+        dispatch(addChatMessage({
+          sender: "System",
+          isPlayer: false,
+          text: `${conn?.metadata?.playerName} joined the room!`,
+          timeStamp: Date.now()
+        }));
+        conn.on("data", (data) => {
+          handleConnectionData(data);
+        });
 
-      conn.on("close", () => {
-        console.log(`${conn?.metadata?.playerName}'s data connection got closed! PeerId: ${conn?.peer}`);
-      });
+        conn.on("close", () => {
+          console.log(`${conn?.metadata?.playerName}'s data connection got closed! PeerId: ${conn?.peer}`);
+        });
 
-      conn.on("error", (error) => {
-        console.log(`${conn?.metadata?.playerName}'s data connection error! PeerId: ${conn?.peer}`, error);
-      });
+        conn.on("error", (error) => {
+          console.log(`${conn?.metadata?.playerName}'s data connection error! PeerId: ${conn?.peer}`, error);
+        });
+      }, 1000);  // Delay because peerjs takes a while to open the connection
     });
 
     peerRef.current.on("call", (call) => {
@@ -277,6 +250,49 @@ export default function QuizMeetRoom() {
     peerRef.current.on("disconnected", () => {
       peerRef.current.reconnect();
     });
+
+    wsRef.current.onopen = () => {
+      try {
+        console.log("Connected to web socket");
+        wsRef.current.send(JSON.stringify({
+          roomId, quizId, peerId, event: "joinRoom", isRoomPublic
+        }));
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
+    wsRef.current.onmessage = (event) => {
+      console.log(event);
+      const data = JSON.parse(event.data);
+      console.log(data);
+      switch (data?.event) {
+        case "roomError":
+          setRoomError(data?.message);
+          break;
+        case "joinRoomSuccess":
+          setPlayerName(data?.playerName);
+          setTimeout(() => {
+            handleJoinRoomSuccess(data, peerId, data?.playerName);
+          }, 1000);  // Delay because peerjs takes a while to open the connection
+          break;
+        case "joinRoomFailed":
+          alert(data?.message);
+          navigate("/quiz/" + quizId);
+          break;
+        case "playerLeftWaitingRoom":
+          dispatch(removeRoomPlayer(data?.peerId));
+          dispatch(addChatMessage({
+            sender: "System Bot",
+            isPlayer: false,
+            text: `${data?.playerName} left the room.`,
+            timeStamp: Date.now()
+          }));
+          break;
+        default:
+          break;
+      }
+    };
 
     wsRef.current.onclose = () => {
       alert("Connection closed");
