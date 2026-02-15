@@ -49,3 +49,66 @@ export async function getQuizByIdData(quizId) {
   const result = await db.query(query, [quizId]);
   return result.rows[0];
 }
+
+export async function getQuizQuestionsForPlay(quizId) {
+  const questionQuery = `
+    SELECT
+      qq.question_id,
+      qq.question_text,
+      qq.image_url,
+      qq.audio_url,
+      qq.difficulty,
+      co.correct_option_id
+    FROM
+      quiz_question_relationships qqr
+      JOIN quiz_questions qq ON qqr.question_id = qq.question_id
+      LEFT JOIN correct_options co ON qq.question_id = co.question_id
+    WHERE
+      qqr.quiz_id = $1
+    ORDER BY
+      qq.question_id ASC
+  `;
+  const optionQuery = `
+    SELECT
+      qo.option_id,
+      qo.question_id,
+      qo.option_text,
+      qo.image_url,
+      qo.audio_url
+    FROM
+      quiz_options qo
+      JOIN quiz_question_relationships qqr ON qo.question_id = qqr.question_id
+    WHERE
+      qqr.quiz_id = $1
+    ORDER BY
+      qo.question_id ASC, qo.option_id ASC
+  `;
+
+  const [questionsResult, optionsResult] = await Promise.all([
+    db.query(questionQuery, [quizId]),
+    db.query(optionQuery, [quizId])
+  ]);
+
+  const optionsByQuestionId = new Map();
+  optionsResult.rows.forEach((option) => {
+    if (!optionsByQuestionId.has(option.question_id)) {
+      optionsByQuestionId.set(option.question_id, []);
+    }
+    optionsByQuestionId.get(option.question_id).push({
+      optionId: option.option_id,
+      optionText: option.option_text,
+      imageUrl: option.image_url,
+      audioUrl: option.audio_url
+    });
+  });
+
+  return questionsResult.rows.map((question) => ({
+    questionId: question.question_id,
+    questionText: question.question_text,
+    imageUrl: question.image_url,
+    audioUrl: question.audio_url,
+    difficulty: question.difficulty || "Medium",
+    correctOptionId: question.correct_option_id,
+    options: optionsByQuestionId.get(question.question_id) || []
+  }));
+}
