@@ -1,4 +1,10 @@
-import { handleJoinRoom, handleLeaveWaitingRoom } from "../websockets/rooms.websocket.js";
+import {
+  handleJoinRoom,
+  handleLeaveWaitingRoom,
+  handleReadyToStart,
+  handleStartPrivateQuiz,
+  handleSubmitAnswer
+} from "../websockets/rooms.websocket.js";
 import { handleChangePlayerName } from "./players.websocket.js";
 
 let liveConnections = 0;
@@ -20,6 +26,15 @@ function setupWebSocketServer(wss) {
             break;
           case "joinRoom":
             handleJoinRoom(ws, data);
+            break;
+          case "readyToStart":
+            handleReadyToStart(ws, data);
+            break;
+          case "startPrivateQuiz":
+            handleStartPrivateQuiz(ws, data);
+            break;
+          case "submitAnswer":
+            handleSubmitAnswer(ws, data);
             break;
           default:
             break;
