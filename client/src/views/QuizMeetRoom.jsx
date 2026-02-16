@@ -3,7 +3,7 @@ import { Button, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org
 import NavbarComponent from "../components/ui/Navbar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import QuizNameCard from "../components/quiz-meet-room/QuizNameCard";
-import { Crown, Mic, MicOff, Sparkles, Timer, Trophy } from "lucide-react";
+import { Crown, Mic, MicOff, Trophy, Pencil, FastForward } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import Peer from "peerjs";
 import { MEDIA_CONSTRAINTS } from "../config/mediaConfig.js";
@@ -11,9 +11,13 @@ import AudioDeviceManager from "../components/quiz-meet-room/AudioDeviceManager.
 import { useDispatch, useSelector } from "react-redux";
 import { addChatMessage, addUpdateRoomPlayer, removeRoomPlayer } from "../store/features/roomSlice.js";
 import TextChatInterface from "../components/quiz-meet-room/TextChatInterface.jsx";
-import { AnimatePresence, motion } from "framer-motion";
+import QuizPlayRoom from "./QuizPlayRoom.jsx";
+import PlayerNameModal from "../components/quiz-meet-room/PlayerNameModal.jsx";
+import useAudioActivity from "../hooks/useAudioActivity.js";
 
-function LeaderboardModal({ isOpen, onOpenChange, leaderboard }) {
+function LeaderboardModal({ isOpen, onOpenChange, leaderboard, toggleMute }) {
+  const roomPlayers = useSelector((state) => state.room.roomPlayers);
+
   return (
     <Modal
       size={"lg"}
@@ -31,15 +35,33 @@ function LeaderboardModal({ isOpen, onOpenChange, leaderboard }) {
             {leaderboard.length === 0 ? (
               <li className="text-sm opacity-80">No scores yet.</li>
             ) : (
-              leaderboard.map((player, index) => (
+              leaderboard.map((player, index) => {
+                const roomPlayer = roomPlayers[player.peerId];
+                const isMute = roomPlayer?.isMute || false;
+                
+                return (
                 <li
                   key={player.peerId}
                   className="flex items-center justify-between rounded-xl px-3 py-2 bg-background/10 border border-background/20"
                 >
-                  <p className="font-medium">#{index + 1} {player.playerName}</p>
+                  <div className="flex items-center gap-3">
+                    <p className="font-medium">#{index + 1}</p>
+                    {roomPlayer && (
+                       <Button 
+                         variant="light" 
+                         size="sm" 
+                         isIconOnly 
+                         onClick={() => toggleMute(player.peerId, isMute)}
+                         className={roomPlayer?.isSpeaking ? "border-2 border-green-500" : ""}
+                       >
+                         {isMute ? <MicOff size={16} /> : <Mic size={16} />}
+                       </Button>
+                    )}
+                    <p className="font-medium">{player.playerName}</p>
+                  </div>
                   <p className="font-semibold">{player.score} pts</p>
                 </li>
-              ))
+              )})
             )}
           </ul>
         </ModalBody>
@@ -58,9 +80,10 @@ export default function QuizMeetRoom() {
   const [roomError, setRoomError] = useState(null);
   const [playerName, setPlayerName] = useState(null);
   const [localPeerId, setLocalPeerId] = useState();
-  const [isLocalPlayerMute, setIsLocalPlayerMute] = useState(false);
+  const [isLocalPlayerMute, setIsLocalPlayerMute] = useState(true);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState(null);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
 
   const [hostPeerId, setHostPeerId] = useState(null);
   const [readyPeerIds, setReadyPeerIds] = useState([]);
@@ -80,14 +103,35 @@ export default function QuizMeetRoom() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [roundResults, setRoundResults] = useState([]);
   const [topThree, setTopThree] = useState([]);
+  const [skipCount, setSkipCount] = useState(0);
+  const [localStream, setLocalStream] = useState(null);
 
   const peerRef = useRef(null);
   const localStreamRef = useRef(new MediaStream());
   const wsRef = useRef(null);
+  
+  const isSpeaking = useAudioActivity(localStream);
   const roomPlayers = useSelector((state) => state.room.roomPlayers);
 
   const isHost = useMemo(() => hostPeerId && localPeerId && hostPeerId === localPeerId, [hostPeerId, localPeerId]);
   const readyCount = readyPeerIds.length;
+
+  const toggleMute = useCallback((peerId, currentMuteStatus) => {
+    dispatch(addUpdateRoomPlayer({
+      key: peerId,
+      value: { isMute: !currentMuteStatus }
+    }));
+  }, [dispatch]);
+
+  const handleSaveName = useCallback((newName) => {
+    if (!wsRef.current) return;
+    wsRef.current.send(JSON.stringify({
+      event: "changePlayerName",
+      roomId,
+      isRoomPublic,
+      newName
+    }));
+  }, [isRoomPublic, roomId]);
 
   useEffect(() => {
     const isPublicParams = searchParams.get("public");
@@ -115,6 +159,7 @@ export default function QuizMeetRoom() {
         localStreamRef.current.onloadedmetadata = () => {
           localStreamRef.current.play();
         };
+        setLocalStream(currentLocalStream);
       } catch (e) {
         alert(e.message);
         console.error(e);
@@ -159,6 +204,12 @@ export default function QuizMeetRoom() {
       case "muteStatus":
         dispatch(addUpdateRoomPlayer({
           key: data?.peerId, value: { isMute: data?.muteStatus }
+        }));
+        break;
+      case "speakingStatus":
+        dispatch(addUpdateRoomPlayer({
+          key: data?.peerId,
+          value: { isSpeaking: data?.isSpeaking }
         }));
         break;
       default:
@@ -224,7 +275,7 @@ export default function QuizMeetRoom() {
   }, [isRoomPublic, isReadyToStart, roomId]);
 
   const handleSubmitAnswer = useCallback((optionId) => {
-    if (!wsRef.current || !currentQuestion || hasAnsweredCurrent || quizStatus !== "playing") {
+    if (!wsRef.current || !currentQuestion || quizStatus !== "playing") {
       return;
     }
     setHasAnsweredCurrent(true);
@@ -235,7 +286,16 @@ export default function QuizMeetRoom() {
       isRoomPublic,
       optionId
     }));
-  }, [currentQuestion, hasAnsweredCurrent, isRoomPublic, quizStatus, roomId]);
+  }, [currentQuestion, isRoomPublic, quizStatus, roomId]);
+
+  const handleSkipTimer = useCallback(() => {
+    if (!wsRef.current) return;
+    wsRef.current.send(JSON.stringify({
+      event: "skipTimer",
+      roomId,
+      isRoomPublic
+    }));
+  }, [isRoomPublic, roomId]);
 
   useEffect(() => {
     if (!wsRef.current) {
@@ -316,6 +376,11 @@ export default function QuizMeetRoom() {
           alert(data?.message);
           navigate("/quiz/" + quizId);
           break;
+        case "playerNameChanged":
+          if (data?.success && data?.newPlayerName) {
+            setPlayerName(data.newPlayerName);
+          }
+          break;
         case "playerLeftWaitingRoom":
           dispatch(removeRoomPlayer(data?.peerId));
           dispatch(addChatMessage({
@@ -329,6 +394,14 @@ export default function QuizMeetRoom() {
           setHostPeerId(data?.hostPeerId || null);
           setReadyPeerIds(data?.readyPeerIds || []);
           setTotalPlayers(data?.totalPlayers || 0);
+          if (data?.roomPlayers) {
+            data.roomPlayers.forEach((player) => {
+              dispatch(addUpdateRoomPlayer({
+                key: player.peerId,
+                value: { playerName: player.playerName }
+              }));
+            });
+          }
           break;
         case "quizStarted":
           setQuizStatus("playing");
@@ -352,6 +425,10 @@ export default function QuizMeetRoom() {
           setCorrectOptionId(null);
           setRoundResults([]);
           setLeaderboard(data?.leaderboard || []);
+          setSkipCount(0);
+          break;
+        case "skipTimerUpdate":
+          setSkipCount(data?.skipCount || 0);
           break;
         case "answerAccepted":
           if (data?.alreadyAnswered) {
@@ -359,6 +436,7 @@ export default function QuizMeetRoom() {
           }
           break;
         case "questionResult":
+          setQuestionEndsAt(0);
           setCorrectOptionId(data?.correctOptionId);
           setRoundResults(data?.results || []);
           setLeaderboard(data?.leaderboard || []);
@@ -399,6 +477,43 @@ export default function QuizMeetRoom() {
     }
   }, [roomError]);
 
+  useEffect(() => {
+    if (localPeerId) {
+      dispatch(addUpdateRoomPlayer({
+        key: localPeerId,
+        value: { isMute: isLocalPlayerMute }
+      }));
+    }
+  }, [localPeerId, isLocalPlayerMute, dispatch]);
+
+  const roomPlayersRef = useRef(roomPlayers);
+  useEffect(() => {
+    roomPlayersRef.current = roomPlayers;
+  }, [roomPlayers]);
+
+  useEffect(() => {
+    if (localPeerId) {
+      // Update local state in Redux (only if changed to avoid potential render cycles if logic was different)
+      // Actually, dispatching same value is usually optimized by Redux or React, but safe to do.
+      dispatch(addUpdateRoomPlayer({
+        key: localPeerId,
+        value: { isSpeaking: !isLocalPlayerMute && isSpeaking }
+      }));
+
+      // Broadcast to peers
+      Object.values(roomPlayersRef.current).forEach((player) => {
+        if (player?.dataConnection?.open) {
+          player.dataConnection.send({
+            type: "speakingStatus",
+            isSpeaking: !isLocalPlayerMute && isSpeaking,
+            peerId: localPeerId
+          });
+        }
+      });
+    }
+  }, [isSpeaking, localPeerId, isLocalPlayerMute, dispatch]); // Intentionally omitting roomPlayers to avoid loop, using ref.
+
+
   const localPlayerRow = useMemo(() => ({
     peerId: localPeerId,
     playerName: `${playerName || "Player"} (You)`
@@ -430,162 +545,141 @@ export default function QuizMeetRoom() {
       <NavbarComponent />
       <article
         className="mt-4 xs:mt-6 mx-3 xs:mx-4 md:mx-auto w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] gap-2 flex flex-col overflow-y-auto">
-        <QuizNameCard quizId={quizId} />
+        {quizStatus === "waiting" && <QuizNameCard quizId={quizId} />}
 
-        {quizStatus === "finished" ? (
-          <section className="mb-6 flex flex-col gap-4 text-foreground bg-background/60 shadow-2xl p-4 xs:p-6 rounded-2xl overflow-hidden relative">
-            <AnimatePresence>
-              <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                {Array.from({ length: 24 }).map((_, index) => (
-                  <motion.span
-                    key={`confetti-${index}`}
-                    className="absolute w-2 h-2 rounded-full bg-amber-300"
-                    initial={{ x: `${Math.random() * 100}%`, y: -20, opacity: 0.8 }}
-                    animate={{ y: "120%", opacity: 0.2, rotate: 360 }}
-                    transition={{ duration: 2 + Math.random() * 1.5, repeat: Infinity, delay: index * 0.04 }}
-                  />
-                ))}
-              </div>
-            </AnimatePresence>
-            <div className="relative z-10">
-              <h1 className="text-2xl xs:text-3xl font-semibold flex items-center gap-2">
-                <Sparkles className="text-amber-300" /> Quiz Complete
-              </h1>
-              <p className="opacity-85">Final top 3</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-                {topThree.map((player, index) => (
-                  <motion.div
-                    key={player.peerId}
-                    initial={{ scale: 0.5, opacity: 0, y: 24 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + (index * 0.2), type: "spring" }}
-                    className="rounded-2xl border border-amber-300/50 bg-amber-500/15 p-3 text-center"
-                  >
-                    <p className="text-xs uppercase opacity-75">#{index + 1}</p>
-                    <p className="font-semibold">{player.playerName}</p>
-                    <p className="text-sm">{player.score} pts</p>
-                  </motion.div>
-                ))}
-              </div>
-              <Button className="mt-4" color="secondary" onClick={() => setIsLeaderboardOpen(true)}>
-                View Leaderboard
-              </Button>
-            </div>
-          </section>
-        ) : (
-          <section className="mb-6 flex flex-col gap-3 text-foreground bg-background/60 shadow-2xl p-3 xxs:p-4 xs:p-6 rounded-2xl overflow-y-auto">
-            <div className="flex flex-row justify-between items-center mb-1 pr-1 gap-2">
-              <h1 className="text-xl xs:text-2xl font-semibold">Quiz Room</h1>
-              <div className="flex items-center gap-2">
+        <section className="mb-6 flex flex-col gap-3 text-foreground bg-background/60 shadow-2xl p-3 xxs:p-4 xs:p-6 rounded-2xl overflow-y-auto">
+          <div className="flex flex-row justify-between items-center mb-1 pr-1 gap-2">
+            <h1 className="text-xl xs:text-2xl font-semibold">Quiz Room</h1>
+            <div className="flex items-center gap-2">
+              {quizStatus === "playing" && hasAnsweredCurrent && correctOptionId === null && (
                 <Button
                   variant="flat"
-                  radius="sm"
-                  startContent={<Trophy size={18} />}
-                  onClick={() => setIsLeaderboardOpen(true)}
+                  color="warning"
+                  size="sm"
+                  startContent={<FastForward size={18} />}
+                  onClick={handleSkipTimer}
+                  className="font-semibold min-w-0 px-3"
                 >
-                  Leaderboard
+                  <span className="hidden xs:inline">Skip Timer</span> ({skipCount}/{totalPlayers})
                 </Button>
-                <TextChatInterface localPeerId={localPeerId} localPlayerName={playerName} />
-              </div>
+              )}
+              <Button
+                variant="flat"
+                radius="sm"
+                size="sm"
+                startContent={<Trophy size={18} />}
+                onClick={() => setIsLeaderboardOpen(true)}
+                className="min-w-0 px-3"
+              >
+                <span className="hidden xs:inline">Leaderboard</span>
+              </Button>
+              <TextChatInterface localPeerId={localPeerId} localPlayerName={playerName} />
             </div>
+          </div>
 
-            {quizStatus === "waiting" ? (
-              <div className="rounded-xl border border-background/20 bg-background/10 p-3">
-                {isRoomPublic ? (
-                  <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2">
-                    <p className="text-sm">
-                      Public room starts when everyone is ready. Ready: {readyCount}/{totalPlayers || 1}
-                    </p>
-                    <Button color={isReadyToStart ? "warning" : "success"} onClick={handleStartClick}>
-                      {isReadyToStart ? "Cancel Ready" : "Start Quiz"}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2">
-                    <p className="text-sm flex items-center gap-1">
-                      <Crown size={16} className={isHost ? "text-amber-300" : "opacity-70"} />
-                      {isHost ? "You created this private room. Start when everyone is ready." : "Waiting for quiz creator to start."}
-                    </p>
-                    <Button color="secondary" onClick={handleStartClick} isDisabled={!isHost}>
-                      Start Quiz
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="rounded-xl border border-background/20 bg-background/10 p-3 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">Question {questionIndex}/{totalQuestions}</p>
-                  <p className="text-sm flex items-center gap-1"><Timer size={16} /> {(timeRemainingMs / 1000).toFixed(1)}s</p>
-                </div>
-                <div className="h-2 rounded-full bg-background/20 overflow-hidden">
-                  <div className="h-2 bg-amber-300 transition-all duration-100" style={{ width: `${timerPercent}%` }} />
-                </div>
-                {currentQuestion ? (
-                  <>
-                    <p className="text-lg font-medium">{currentQuestion.questionText}</p>
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {currentQuestion.options?.map((option) => (
-                        <li key={option.optionId}>
-                          <button
-                            type="button"
-                            onClick={() => handleSubmitAnswer(option.optionId)}
-                            disabled={hasAnsweredCurrent || correctOptionId !== null}
-                            className={`w-full text-left rounded-xl border px-3 py-2 transition-colors ${optionClassName(option.optionId)}`}
-                          >
-                            {option.optionText || `Option ${option.optionId}`}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    {hasAnsweredCurrent && correctOptionId === null ? (
-                      <p className="text-sm opacity-80">Answer locked. Waiting for timer to end.</p>
-                    ) : null}
-                    {roundResults.length > 0 ? (
-                      <p className="text-sm font-medium">
-                        {roundResults.find((result) => result.peerId === localPeerId)?.isCorrect
-                          ? `Correct! +${roundResults.find((result) => result.peerId === localPeerId)?.pointsAwarded || 0} pts`
-                          : "Round result is out."}
-                      </p>
-                    ) : null}
-                  </>
-                ) : (
-                  <p className="text-sm opacity-80">Preparing next question...</p>
-                )}
-              </div>
-            )}
-
-            <ul className={"flex flex-col gap-2 pr-1 rounded-2xl overflow-y-auto"}>
-              <li className="flex flex-row min-w-full gap-2 p-2 h-12 items-center bg-[#39004E] text-background shadow-lg rounded-xl">
-                <AudioDeviceManager {...{
-                  selectedAudioDevice,
-                  setSelectedAudioDevice,
-                  isLocalPlayerMute,
-                  setIsLocalPlayerMute
-                }}
-                />
-                <h2 className={"flex-1 text-center"}>{localPlayerRow.playerName}</h2>
-              </li>
-              {Object.entries(roomPlayers).map(([key, value], ind) => (
-                <li
-                  key={ind}
-                  className="flex flex-row min-w-full gap-2 p-2 h-12 items-center bg-[#39004E] text-background shadow-lg rounded-xl"
-                >
-                  <Button variant={"flat"} size={"sm"} isIconOnly>
-                    {value?.isMute ? <MicOff size={22} /> : <Mic size={22} />}
+          {quizStatus === "waiting" && (
+            <div className="rounded-xl border border-background/20 bg-background/10 p-3">
+              {isRoomPublic ? (
+                <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2">
+                  <p className="text-sm">
+                    Public room starts when everyone is ready. Ready: {readyCount}/{totalPlayers || 1}
+                  </p>
+                  <Button color={isReadyToStart ? "warning" : "success"} onClick={handleStartClick}>
+                    {isReadyToStart ? "Cancel Ready" : "Start Quiz"}
                   </Button>
-                  <h2 className={"flex-1 text-center"}>{value?.playerName}</h2>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+                </div>
+              ) : (
+                <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2">
+                  <p className="text-sm flex items-center gap-1">
+                    <Crown size={16} className={isHost ? "text-amber-300" : "opacity-70"} />
+                    {isHost ? "You created this private room. Start when everyone is ready." : "Waiting for quiz creator to start."}
+                  </p>
+                  <Button color="secondary" onClick={handleStartClick} isDisabled={!isHost}>
+                    Start Quiz
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <ul className={"flex flex-col gap-2 pr-1 rounded-2xl overflow-y-auto"}>
+            <li className="flex flex-row min-w-full gap-2 p-2 h-12 items-center bg-[#39004E] text-background shadow-lg rounded-xl">
+              <AudioDeviceManager {...{
+                selectedAudioDevice,
+                setSelectedAudioDevice,
+                isLocalPlayerMute,
+                setIsLocalPlayerMute,
+                isSpeaking
+              }}
+              />
+              <div className="flex-1 flex items-center justify-center gap-2">
+                <h2 className={"text-center"}>{localPlayerRow.playerName}</h2>
+                {quizStatus === "waiting" && (
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="flat"
+                    className="min-w-6 w-6 h-6 bg-white/20 hover:bg-white/40 text-white"
+                    onClick={() => setIsNameModalOpen(true)}
+                  >
+                    <Pencil size={14} />
+                  </Button>
+                )}
+              </div>
+            </li>
+            {quizStatus === "waiting" && Object.entries(roomPlayers).map(([key, value], ind) => (
+              <li
+                key={ind}
+                className="flex flex-row min-w-full gap-2 p-2 h-12 items-center bg-[#39004E] text-background shadow-lg rounded-xl"
+              >
+                <Button 
+                  variant={"flat"} 
+                  size={"sm"} 
+                  isIconOnly 
+                  onClick={() => toggleMute(key, value?.isMute)}
+                  className={value?.isSpeaking ? "border-2 border-green-500" : ""}
+                >
+                  {value?.isMute ? <MicOff size={22} /> : <Mic size={22} />}
+                </Button>
+                <h2 className={"flex-1 text-center"}>{value?.playerName}</h2>
+              </li>
+            ))}
+          </ul>
+
+          {(quizStatus === "playing" || quizStatus === "finished") && (
+            <QuizPlayRoom
+              quizStatus={quizStatus}
+              currentQuestion={currentQuestion}
+              questionIndex={questionIndex}
+              totalQuestions={totalQuestions}
+              timeRemainingMs={timeRemainingMs}
+              questionDurationMs={questionDurationMs}
+              timerPercent={timerPercent}
+              roundResults={roundResults}
+              topThree={topThree}
+              localPeerId={localPeerId}
+              handleSubmitAnswer={handleSubmitAnswer}
+              hasAnsweredCurrent={hasAnsweredCurrent}
+              selectedOptionId={selectedOptionId}
+              correctOptionId={correctOptionId}
+              setIsLeaderboardOpen={setIsLeaderboardOpen}
+            />
+          )}
+        </section>
       </article>
 
       <LeaderboardModal
         isOpen={isLeaderboardOpen}
         onOpenChange={(open) => setIsLeaderboardOpen(open)}
         leaderboard={leaderboard}
+        toggleMute={toggleMute}
+      />
+      
+      <PlayerNameModal
+        isOpen={isNameModalOpen}
+        onOpenChange={(open) => setIsNameModalOpen(open)}
+        currentName={playerName}
+        onSave={handleSaveName}
       />
     </section>
   );

@@ -112,3 +112,17 @@ export async function getQuizQuestionsForPlay(quizId) {
     options: optionsByQuestionId.get(question.question_id) || []
   }));
 }
+
+export async function updateQuizStats(quizId, playerCount, sessionSuccessRate) {
+  const query = `
+    UPDATE quizzes
+    SET
+      success_rate = CASE
+        WHEN (contestants_count + $2) = 0 THEN 0
+        ELSE ((COALESCE(success_rate, 0) * contestants_count) + ($3 * $2)) / (contestants_count + $2)
+      END,
+      contestants_count = contestants_count + $2
+    WHERE quiz_id = $1
+  `;
+  await db.query(query, [quizId, playerCount, sessionSuccessRate]);
+}
