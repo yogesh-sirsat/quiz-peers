@@ -1,7 +1,7 @@
 import { generateRandomRoomId } from "../utils/rooms.utils.js";
 import { getGeneratePlayerName } from "./players.websocket.js";
 import HttpError from "../errors/app.error.js";
-import { getQuizQuestionsForPlay } from "../models/quiz.models.js";
+import { getQuizQuestionsForPlay, updateQuizStats } from "../models/quiz.models.js";
 
 export const publicWaitingRooms = new Map();
 export const publicPlayingRooms = new Map();
@@ -117,6 +117,14 @@ function beginNextQuestion(session) {
       leaderboard,
       topThree: leaderboard.slice(0, 3)
     });
+
+    if (process.env.NODE_ENV !== "development") {
+      const totalPossible = session.sessionTotalPossible || 1; // avoid division by zero
+      const successRate = (session.sessionTotalCorrect / totalPossible) * 100;
+      updateQuizStats(session.quizId, session.players.size, successRate)
+        .catch((e) => console.error("Failed to update quiz stats:", e));
+    }
+
     playingRooms.delete(session.roomId);
     return;
   }
@@ -124,6 +132,7 @@ function beginNextQuestion(session) {
   const currentQuestion = session.questions[session.currentQuestionIndex];
   session.questionStartedAt = Date.now();
   session.currentAnswers = new Map();
+  session.skipTimerVotes = new Set();
 
   session.questionTimeout = setTimeout(() => {
     finalizeCurrentQuestion(session.roomId, session.isRoomPublic);
@@ -156,8 +165,12 @@ function finalizeCurrentQuestion(roomId, isRoomPublic) {
   }
 
   clearTimeout(session.questionTimeout);
+  session.skipTimerVotes.clear();
+
   const currentQuestion = session.questions[session.currentQuestionIndex];
   const roundResults = [];
+
+  session.sessionTotalPossible += session.players.size;
 
   session.players.forEach((player, peerId) => {
     const answer = session.currentAnswers.get(peerId);
@@ -167,6 +180,7 @@ function finalizeCurrentQuestion(roomId, isRoomPublic) {
     let speedBonus = 0;
 
     if (isCorrect) {
+      session.sessionTotalCorrect += 1;
       const basePoints = getBasePointsForDifficulty(currentQuestion.difficulty);
       const elapsedMs = Math.max(0, Math.min(session.questionDurationMs, answer.submittedAt - session.questionStartedAt));
       const remainingRatio = Math.max(0, (session.questionDurationMs - elapsedMs) / session.questionDurationMs);
@@ -242,7 +256,10 @@ async function startQuiz(roomId, isRoomPublic) {
       interQuestionDelayMs: INTER_QUESTION_DELAY_MS,
       questionStartedAt: null,
       questionTimeout: null,
-      interQuestionTimeout: null
+      interQuestionTimeout: null,
+      sessionTotalCorrect: 0,
+      sessionTotalPossible: 0,
+      skipTimerVotes: new Set()
     };
 
     getPlayingRoomsMap(isRoomPublic).set(roomId, session);
@@ -325,11 +342,6 @@ export function handleSubmitAnswer(ws, data) {
       return;
     }
 
-    if (session.currentAnswers.has(ws.peerId)) {
-      safeSend(ws, { event: "answerAccepted", alreadyAnswered: true });
-      return;
-    }
-
     session.currentAnswers.set(ws.peerId, {
       optionId: data?.optionId,
       submittedAt: Date.now()
@@ -338,6 +350,36 @@ export function handleSubmitAnswer(ws, data) {
   } catch (error) {
     console.error(error);
     safeSend(ws, { event: "submitAnswerFailed", message: "Unable to submit answer." });
+  }
+}
+
+export function handleSkipTimer(ws, data) {
+  try {
+    const playingRooms = getPlayingRoomsMap(data?.isRoomPublic);
+    const session = playingRooms.get(data?.roomId);
+    
+    if (!session || !session.players.has(ws.peerId)) {
+      return;
+    }
+    
+    // Can only skip if question is active and user has answered
+    if (!session.currentAnswers.has(ws.peerId)) {
+      return;
+    }
+
+    session.skipTimerVotes.add(ws.peerId);
+    
+    broadcastPlayers(session.players, {
+      event: "skipTimerUpdate",
+      skipCount: session.skipTimerVotes.size,
+      totalPlayers: session.players.size
+    });
+
+    if (session.skipTimerVotes.size === session.players.size) {
+      finalizeCurrentQuestion(session.roomId, session.isRoomPublic);
+    }
+  } catch (error) {
+    console.error(error);
   }
 }
 
@@ -382,6 +424,61 @@ export function handleLeaveWaitingRoom(ws) {
     }
   } catch (error) {
     console.error(error);
+  }
+}
+
+export function handleChangePlayerName(ws, data) {
+  try {
+    const room = getWaitingRoom(data?.roomId, data?.isRoomPublic);
+    if (!room) {
+      safeSend(ws, {
+        event: "changePlayerNameFailed",
+        responseCode: "ROOM NOT FOUND",
+        message: "Oops! Room not found!"
+      });
+      return;
+    }
+
+    if (!room.has(ws.peerId)) {
+      safeSend(ws, {
+        event: "changePlayerNameFailed",
+        responseCode: "PLAYER NOT FOUND",
+        message: "Oops! Player not found!"
+      });
+      return;
+    }
+
+    let newName = data?.newName;
+    if (data?.regenerate) {
+      newName = getGeneratePlayerName(room);
+    } else if (!newName) {
+       safeSend(ws, {
+        event: "changePlayerNameFailed",
+        message: "No name provided."
+      });
+      return;
+    }
+    
+    // Basic validation: ensure name isn't too long or empty
+    if (newName.length > 50) {
+      newName = newName.substring(0, 50);
+    }
+
+    const player = room.get(ws.peerId);
+    player.playerName = newName;
+    room.set(ws.peerId, player);
+    ws.playerName = newName;
+
+    safeSend(ws, {
+      event: "playerNameChanged",
+      success: true,
+      newPlayerName: newName
+    });
+
+    emitWaitingRoomState(data?.roomId, data?.isRoomPublic);
+  } catch (error) {
+    console.error(error);
+    safeSend(ws, { event: "changePlayerNameFailed", message: "Server error." });
   }
 }
 

@@ -23,38 +23,30 @@ export default function TextChatInterface({ localPeerId, localPlayerName }) {
   const [currentText, setCurrentText] = useState("");
 
   const handleSendMessage = (text) => {
-    try {
-      console.log("sending text to data connection", text);
+    if (!text || !text.trim()) return;
 
-      dispatch(addChatMessage({
+    try {
+      const messagePayload = {
         sender: localPlayerName,
         peerId: localPeerId,
         text: text,
         isPlayer: true,
         timeStamp: Date.now()
-      }));
-      console.log("sending text to data connection", text);
+      };
 
-      Object.entries(roomPlayers).forEach(([key, value]) => {
-        console.log(key)
-        console.log(value)
-        if (value?.dataConnection && value?.dataConnection?.open) {
-          console.log("sending text to data connection", text);
-          value?.dataConnection?.send({
+      dispatch(addChatMessage(messagePayload));
+
+      Object.values(roomPlayers).forEach((player) => {
+        if (player?.dataConnection?.open) {
+          player.dataConnection.send({
             type: "chatMessage",
-            sender: localPlayerName,
-            peerId: key,
-            text,
-            isPlayer: true,
-            timeStamp: Date.now()
+            ...messagePayload
           });
-        } else {
-          console.log("Not connected to data connection");
         }
       });
       setCurrentText("");
     } catch (error) {
-      console.log(error);
+      console.error("Error sending message:", error);
     }
   };
   const sendButtonDisabled = useMemo(() => {
@@ -66,8 +58,8 @@ export default function TextChatInterface({ localPeerId, localPlayerName }) {
 
   return (
     <>
-      <Button isIconOnly variant={"flat"} radius={"sm"} onClick={onOpen}>
-        <MessageSquareText />
+      <Button isIconOnly variant={"flat"} size={"sm"} radius={"sm"} onClick={onOpen}>
+        <MessageSquareText size={20} />
       </Button>
       <Modal
         size={"xl"}
@@ -84,21 +76,36 @@ export default function TextChatInterface({ localPeerId, localPlayerName }) {
             Text Chat
           </ModalHeader>
           <ModalBody className="pt-4 pb-6 xs:py-5">
-            <ul className="flex flex-col gap-2">
-              {chatMessages.map((message, id) => (
-                <li key={id}>
-                  <TextMessageCard message={message} />
-                </li>
-              ))}
+            <ul className="flex flex-col gap-1 max-h-[60vh] overflow-y-auto px-1">
+              {chatMessages.map((message, id) => {
+                const showName = id === 0 || chatMessages[id - 1].sender !== message.sender;
+                return (
+                  <li key={id} className={`flex flex-col ${showName ? "mt-2" : "mt-0.5"}`}>
+                    <TextMessageCard message={message} showName={showName} />
+                  </li>
+                );
+              })}
             </ul>
           </ModalBody>
           <ModalFooter>
-            <Input placeholder="Enter your message" onValueChange={setCurrentText} value={currentText} />
-            <Button isIconOnly variant={"flat"} isDisabled={sendButtonDisabled} onClick={() => {
-              handleSendMessage(currentText);
-            }}>
-              <SendHorizontal size={22} />
-            </Button>
+            <div className="flex w-full gap-2">
+              <Input 
+                placeholder="Type a message..." 
+                value={currentText} 
+                onValueChange={setCurrentText} 
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !sendButtonDisabled) {
+                    handleSendMessage(currentText);
+                  }
+                }}
+                className="flex-1"
+              />
+              <Button isIconOnly color="primary" isDisabled={sendButtonDisabled} onClick={() => {
+                handleSendMessage(currentText);
+              }}>
+                <SendHorizontal size={18} />
+              </Button>
+            </div>
           </ModalFooter>
         </ModalContent>
       </Modal>

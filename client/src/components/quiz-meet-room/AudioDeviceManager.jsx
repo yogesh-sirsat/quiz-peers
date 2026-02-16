@@ -8,7 +8,8 @@ export default function AudioDeviceManager({
                                              selectedAudioDevice,
                                              setSelectedAudioDevice,
                                              isLocalPlayerMute,
-                                             setIsLocalPlayerMute
+                                             setIsLocalPlayerMute,
+                                             isSpeaking
                                            }) {
   const dispatch = useDispatch();
   const roomPlayers = useSelector((state) => state.room.roomPlayers);
@@ -52,6 +53,7 @@ export default function AudioDeviceManager({
         handleLocalPlayerMuteStatus(!isLocalPlayerMute);
       }}
       isIconOnly
+      className={isSpeaking && !isLocalPlayerMute ? "border-2 border-green-500" : ""}
     >
       {
         isLocalPlayerMute ? (

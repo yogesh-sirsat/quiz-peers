@@ -3,9 +3,10 @@ import {
   handleLeaveWaitingRoom,
   handleReadyToStart,
   handleStartPrivateQuiz,
-  handleSubmitAnswer
+  handleSubmitAnswer,
+  handleChangePlayerName,
+  handleSkipTimer
 } from "../websockets/rooms.websocket.js";
-import { handleChangePlayerName } from "./players.websocket.js";
 
 let liveConnections = 0;
 
@@ -35,6 +36,9 @@ function setupWebSocketServer(wss) {
             break;
           case "submitAnswer":
             handleSubmitAnswer(ws, data);
+            break;
+          case "skipTimer":
+            handleSkipTimer(ws, data);
             break;
           default:
             break;
