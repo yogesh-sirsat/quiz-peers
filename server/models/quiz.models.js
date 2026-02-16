@@ -1,7 +1,7 @@
 import * as db from "../database/postgres.database.js";
 
-export async function getAllQuizzesData() {
-  const query = `
+export async function getAllQuizzesData(onlyValid = true) {
+  let query = `
       SELECT
         qz.quiz_id,
         qz.quiz_name,
@@ -10,17 +10,86 @@ export async function getAllQuizzesData() {
         qz.contestants_count,
         qz.success_rate,
         Count(qq.question_id) questions_count,
-        array_agg (DISTINCT qc.category_name) categories 
+        array_agg (DISTINCT qc.category_name) FILTER (WHERE qc.category_name IS NOT NULL) categories 
       FROM
         quizzes qz
         LEFT JOIN quiz_question_relationships qqr ON qz.quiz_id = qqr.quiz_id
         LEFT JOIN quiz_questions qq ON qqr.question_id = qq.question_id
-        JOIN quiz_categories qc ON qq.category_id = qc.category_id
+        LEFT JOIN quiz_categories qc ON qq.category_id = qc.category_id
+  `;
+
+  if (onlyValid) {
+    query += `
+      WHERE EXISTS (
+        SELECT 1 FROM quiz_question_relationships qqr2
+        WHERE qqr2.quiz_id = qz.quiz_id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM quiz_question_relationships qqr3
+        JOIN quiz_questions qq3 ON qqr3.question_id = qq3.question_id
+        LEFT JOIN correct_options co ON qq3.question_id = co.question_id
+        WHERE qqr3.quiz_id = qz.quiz_id
+        AND (
+          co.correct_option_id IS NULL 
+          OR NOT EXISTS (SELECT 1 FROM quiz_options qo WHERE qo.question_id = qq3.question_id)
+        )
+      )
+    `;
+  }
+
+  query += `
       GROUP BY
         qz.quiz_id
     `;
   const result = await db.query(query);
   return result.rows;
+}
+
+export async function createQuizData({ quizName, description, coverImageUrl }) {
+  const query = `
+    INSERT INTO quizzes (quiz_name, description, cover_image_url)
+    VALUES ($1, $2, $3)
+    RETURNING *
+  `;
+  const result = await db.query(query, [quizName, description, coverImageUrl]);
+  return result.rows[0];
+}
+
+export async function updateQuizData(quizId, { quizName, description, coverImageUrl }) {
+  const query = `
+    UPDATE quizzes
+    SET quiz_name = COALESCE($1, quiz_name),
+        description = COALESCE($2, description),
+        cover_image_url = COALESCE($3, cover_image_url),
+        updated_at = CURRENT_TIMESTAMP
+    WHERE quiz_id = $4
+    RETURNING *
+  `;
+  const result = await db.query(query, [quizName, description, coverImageUrl, quizId]);
+  return result.rows[0];
+}
+
+export async function deleteQuizData(quizId, deleteQuestions = false) {
+  if (deleteQuestions) {
+    const getQuestionsQuery = `SELECT question_id FROM quiz_question_relationships WHERE quiz_id = $1`;
+    const questionsResult = await db.query(getQuestionsQuery, [quizId]);
+    const questionIds = questionsResult.rows.map((r) => r.question_id);
+
+    if (questionIds.length > 0) {
+      const deleteQuestionsQuery = `
+          DELETE FROM quiz_questions
+          WHERE question_id = ANY($1)
+          AND question_id NOT IN (
+            SELECT question_id FROM quiz_question_relationships WHERE quiz_id != $2
+          )
+        `;
+      await db.query(deleteQuestionsQuery, [questionIds, quizId]);
+    }
+  }
+
+  const query = `DELETE FROM quizzes WHERE quiz_id = $1`;
+  const result = await db.query(query, [quizId]);
+  return result.rowCount > 0;
 }
 
 export async function getQuizByIdData(quizId) {
