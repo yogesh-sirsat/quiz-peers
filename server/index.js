@@ -6,6 +6,8 @@ import errorHandler from "./middlewares/errorHandler.middleware.js";
 import websocketHandler from "./websockets/handler.websocket.js";
 import quizzesRoutes from "./routes/quizzes.routes.js";
 import roomsRoutes from "./routes/rooms.routes.js";
+import questionsRoutes from "./routes/questions.routes.js";
+import optionsRoutes from "./routes/options.routes.js";
 import "dotenv/config";
 
 const app = express();
@@ -36,6 +38,8 @@ app.get("/", (req, res) => {
 // Use routes here
 app.use("/api/quizzes", quizzesRoutes);
 app.use("/api/rooms", roomsRoutes);
+app.use("/api/questions", questionsRoutes);
+app.use("/api/options", optionsRoutes);
 
 app.use((req, res) => {
   res.status(404).send("Page not found");

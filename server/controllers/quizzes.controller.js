@@ -1,8 +1,10 @@
-import { getAllQuizzesData, getQuizByIdData } from "../models/quiz.models.js";
+import { getAllQuizzesData, getQuizByIdData, createQuizData, updateQuizData, deleteQuizData } from "../models/quiz.models.js";
+import HttpAppError from "../errors/app.error.js";
 
 export async function getAllQuizzes(req, res, next) {
   try {
-    const data = await getAllQuizzesData();
+    const { onlyValid } = req.query;
+    const data = await getAllQuizzesData(onlyValid !== "false");
     res.send(data);
   } catch (error) {
     next(error);
@@ -13,7 +15,51 @@ export async function getQuizById(req, res, next) {
   try {
     const { quizId } = req.params;
     const data = await getQuizByIdData(quizId);
+    if (!data) {
+      throw new HttpAppError("Quiz not found", 404);
+    }
     res.send(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createQuiz(req, res, next) {
+  try {
+    const { quizName, description, coverImageUrl } = req.body;
+    if (!quizName) {
+      throw new HttpAppError("Quiz name is required", 400);
+    }
+    const data = await createQuizData({ quizName, description, coverImageUrl });
+    res.status(201).send(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateQuiz(req, res, next) {
+  try {
+    const { quizId } = req.params;
+    const { quizName, description, coverImageUrl } = req.body;
+    const data = await updateQuizData(quizId, { quizName, description, coverImageUrl });
+    if (!data) {
+      throw new HttpAppError("Quiz not found", 404);
+    }
+    res.send(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteQuiz(req, res, next) {
+  try {
+    const { quizId } = req.params;
+    const { deleteQuestions } = req.query;
+    const success = await deleteQuizData(quizId, deleteQuestions === "true");
+    if (!success) {
+      throw new HttpAppError("Quiz not found", 404);
+    }
+    res.status(204).send();
   } catch (error) {
     next(error);
   }
