@@ -53,11 +53,13 @@ export default function NavbarComponent() {
         </Link>
       </NavbarBrand>
 
-      <NavbarContent className="hidden smd:flex gap-4" justify="center">
+      <NavbarContent className="hidden smd:flex gap-4" justify="end">
         <NavbarItem>
           <h3 className="text-xl">Real-time Multiplayer Quizzes</h3>
         </NavbarItem>
       </NavbarContent>
+
+     
     </Navbar>
   );
 }

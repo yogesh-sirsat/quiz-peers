@@ -1,4 +1,4 @@
-import { getAllQuizzesData, getQuizByIdData, createQuizData, updateQuizData, deleteQuizData } from "../models/quiz.models.js";
+import { getAllQuizzesData, getQuizByIdData, createQuizData, updateQuizData, deleteQuizData, getQuizQuestionsForPlay, getAllCategoriesData } from "../models/quiz.models.js";
 import HttpAppError from "../errors/app.error.js";
 
 export async function getAllQuizzes(req, res, next) {
@@ -60,6 +60,25 @@ export async function deleteQuiz(req, res, next) {
       throw new HttpAppError("Quiz not found", 404);
     }
     res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getQuizQuestions(req, res, next) {
+  try {
+    const { quizId } = req.params;
+    const data = await getQuizQuestionsForPlay(quizId);
+    res.send(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAllCategories(req, res, next) {
+  try {
+    const data = await getAllCategoriesData();
+    res.send(data);
   } catch (error) {
     next(error);
   }

@@ -217,16 +217,23 @@ function finalizeCurrentQuestion(roomId, isRoomPublic) {
 
 async function startQuiz(roomId, isRoomPublic) {
   const waitingRoom = getWaitingRoom(roomId, isRoomPublic);
-  if (!waitingRoom || waitingRoom.meta?.isStarting) {
+  if (!waitingRoom) {
+    console.error(`startQuiz: Room ${roomId} not found (public: ${isRoomPublic})`);
+    return;
+  }
+  if (waitingRoom.meta?.isStarting) {
+    console.log(`startQuiz: Room ${roomId} is already starting`);
     return;
   }
   waitingRoom.meta.isStarting = true;
 
   try {
     const quizId = waitingRoom.meta?.quizId;
+    console.log(`startQuiz: Fetching questions for quiz ${quizId}`);
     const questions = await getQuizQuestionsForPlay(quizId);
 
     if (!questions.length) {
+      console.warn(`startQuiz: Quiz ${quizId} has no playable questions.`);
       broadcastPlayers(waitingRoom, {
         event: "quizStartFailed",
         message: "Quiz has no playable questions."
@@ -543,17 +550,19 @@ export function isRoomIdInUse(roomId) {
   return (publicWaitingRooms.has(roomId) || privateWaitingRooms.has(roomId) || publicPlayingRooms.has(roomId) || privatePlayingRooms.has(roomId));
 }
 
-export function getValidGeneratedRoomId(isPublic = true) {
+export function getValidGeneratedRoomId(isPublic = true, quizId = null) {
   // Try 1 Million times to find a room id that is not in use.
   let tries = 0;
   const million = 1000000;
   while (tries < million) {
     const roomId = generateRandomRoomId();
     if (!isRoomIdInUse(roomId)) {
+      const roomState = createWaitingRoomState(isPublic);
+      roomState.meta.quizId = quizId;
       if (isPublic) {
-        publicWaitingRooms.set(roomId, createWaitingRoomState(true));
+        publicWaitingRooms.set(roomId, roomState);
       } else {
-        privateWaitingRooms.set(roomId, createWaitingRoomState(false));
+        privateWaitingRooms.set(roomId, roomState);
       }
       return roomId;
     }
@@ -566,11 +575,12 @@ export function getValidGeneratedRoomId(isPublic = true) {
   throw new HttpError("Could not create a private room, please try again!", 404);
 }
 
-export function getValidPublicRoomId() {
+export function getValidPublicRoomId(quizId = null) {
   for (const [key, value] of publicWaitingRooms) {
-    if (value.size < 10) {
+    if (value.size < 10 && (value.meta.quizId === quizId || !value.meta.quizId)) {
+      if (!value.meta.quizId) value.meta.quizId = quizId;
       return key;
     }
   }
-  return getValidGeneratedRoomId();
+  return getValidGeneratedRoomId(true, quizId);
 }

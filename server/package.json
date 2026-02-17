@@ -12,9 +12,12 @@
   "author": "Yogesh Sirsat",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.990.0",
+    "axios": "^1.13.5",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "multer": "^2.0.2",
     "nanoid": "^5.0.7",
     "nodemon": "^3.1.4",
     "pg": "^8.12.0",

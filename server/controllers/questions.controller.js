@@ -114,7 +114,7 @@ export async function setCorrectOption(req, res, next) {
     }
 
     const option = await getOptionByIdData(optionId);
-    if (!option || option.question_id !== parseInt(questionId)) {
+    if (!option || Number(option.question_id) !== Number(questionId)) {
       throw new HttpAppError("Option does not belong to this question", 400);
     }
 

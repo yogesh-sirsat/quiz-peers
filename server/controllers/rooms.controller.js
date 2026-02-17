@@ -2,7 +2,8 @@ import { getRoomDetails, getValidGeneratedRoomId, getValidPublicRoomId } from ".
 
 export async function getPublicRoomId(req, res, next) {
   try {
-    const publicRoomId = getValidPublicRoomId();
+    const { quizId } = req.query;
+    const publicRoomId = getValidPublicRoomId(quizId);
     res.send({ roomId: publicRoomId });
   } catch (error) {
     next(error);
@@ -11,7 +12,8 @@ export async function getPublicRoomId(req, res, next) {
 
 export async function getIdForPrivateRoom(req, res, next) {
   try {
-    const privateRoomId = getValidGeneratedRoomId(false);
+    const { quizId } = req.query;
+    const privateRoomId = getValidGeneratedRoomId(false, quizId);
     res.send({ roomId: privateRoomId });
   } catch (error) {
     next(error);

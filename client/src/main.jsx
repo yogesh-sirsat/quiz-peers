@@ -9,6 +9,9 @@ import "./index.css";
 import QuizDetails from "./views/QuizDetails.jsx";
 import QuizMeetRoom from "./views/QuizMeetRoom.jsx";
 import PageNotFound from "./views/PageNotFound.jsx";
+import AdminLogin from "./views/AdminLogin.jsx";
+import AdminPanel from "./views/AdminPanel.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   // <React.StrictMode>
@@ -19,6 +22,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <Route path="/" element={<App />} />
             <Route path="/quiz/:quizId" element={<QuizDetails />} />
             <Route path="/quiz/:quizId/:roomId" element={<QuizMeetRoom />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPanel />
+                </ProtectedRoute>
+              }
+            />
             <Route path="pagenotfound" element={<PageNotFound />} />
           </Routes>
         </Router>
