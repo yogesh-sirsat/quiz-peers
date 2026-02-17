@@ -99,6 +99,10 @@ export default function TextChatInterface({ localPeerId, localPlayerName }) {
                   }
                 }}
                 className="flex-1"
+                classNames={{
+                  inputWrapper: "bg-black/10 hover:bg-black/20 focus-within:!bg-black/20",
+                  input: "placeholder:text-foreground/50"
+                }}
               />
               <Button isIconOnly color="primary" isDisabled={sendButtonDisabled} onClick={() => {
                 handleSendMessage(currentText);

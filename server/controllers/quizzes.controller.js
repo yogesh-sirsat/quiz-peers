@@ -3,8 +3,8 @@ import HttpAppError from "../errors/app.error.js";
 
 export async function getAllQuizzes(req, res, next) {
   try {
-    const { onlyValid } = req.query;
-    const data = await getAllQuizzesData(onlyValid !== "false");
+    const { onlyValid, includeTesting } = req.query;
+    const data = await getAllQuizzesData(onlyValid !== "false", includeTesting === "true");
     res.send(data);
   } catch (error) {
     next(error);
@@ -26,11 +26,11 @@ export async function getQuizById(req, res, next) {
 
 export async function createQuiz(req, res, next) {
   try {
-    const { quizName, description, coverImageUrl } = req.body;
+    const { quizName, description, coverImageUrl, status } = req.body;
     if (!quizName) {
       throw new HttpAppError("Quiz name is required", 400);
     }
-    const data = await createQuizData({ quizName, description, coverImageUrl });
+    const data = await createQuizData({ quizName, description, coverImageUrl, status });
     res.status(201).send(data);
   } catch (error) {
     next(error);
@@ -40,8 +40,8 @@ export async function createQuiz(req, res, next) {
 export async function updateQuiz(req, res, next) {
   try {
     const { quizId } = req.params;
-    const { quizName, description, coverImageUrl } = req.body;
-    const data = await updateQuizData(quizId, { quizName, description, coverImageUrl });
+    const { quizName, description, coverImageUrl, status } = req.body;
+    const data = await updateQuizData(quizId, { quizName, description, coverImageUrl, status });
     if (!data) {
       throw new HttpAppError("Quiz not found", 404);
     }

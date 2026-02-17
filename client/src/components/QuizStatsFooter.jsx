@@ -19,7 +19,7 @@ export default function QuizStatsFooter({
           size="sm"
           variant="flat"
         >
-          {successRate}% SUCCESS RATE
+          {Math.round(successRate)}% SUCCESS RATE
         </Chip>
       ) : null}
       <Chip
@@ -32,7 +32,7 @@ export default function QuizStatsFooter({
         size="sm"
         variant="flat"
       >
-        {contestantsCount} TIMES PLAYED
+        {Math.round(contestantsCount)} TIMES PLAYED
       </Chip>
       <Chip
         className="min-w-4 min-h-4"
@@ -44,14 +44,14 @@ export default function QuizStatsFooter({
         size="sm"
         variant="flat"
       >
-        {questionsCount} TOTAL QUESTIONS
+        {Math.round(questionsCount)} TOTAL QUESTIONS
       </Chip>
     </div>
   );
 }
 
 QuizStatsFooter.propTypes = {
-  successRate: PropTypes.string,
-  contestantsCount: PropTypes.number,
-  questionsCount: PropTypes.string,
+  successRate: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  contestantsCount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  questionsCount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };

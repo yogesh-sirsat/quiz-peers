@@ -1,7 +1,8 @@
 import { Button } from "@nextui-org/react";
 import { Sparkles, Timer, Crown, Music, Play, Pause } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import PropTypes from "prop-types";
 
 function AudioPlayer({ audioUrl, compact }) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -71,6 +72,11 @@ export default function QuizPlayRoom({
   const successAudio = useRef(new Audio("/sound-effects/success-yipee.mp3"));
   const failAudio = useRef(new Audio("/sound-effects/fail-trumpet.mp3"));
   const celebrationAudio = useRef(new Audio("/sound-effects/celebration-trumpets.mp3"));
+
+  const shuffledOptions = useMemo(() => {
+    if (!currentQuestion?.options) return [];
+    return [...currentQuestion.options].sort(() => Math.random() - 0.5);
+  }, [currentQuestion?.questionId]);
 
   useEffect(() => {
     successAudio.current.volume = 0.5;
@@ -246,7 +252,7 @@ export default function QuizPlayRoom({
   return (
     <div className="rounded-xl border border-background/20 bg-background/10 p-3 flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Question {questionIndex}/{totalQuestions}</p>
+        <p className="text-sm font-medium">{questionIndex}/{totalQuestions}</p>
         <p className="text-sm flex items-center gap-1"><Timer size={16} /> {(timeRemainingMs / 1000).toFixed(1)}s</p>
       </div>
       <div className="h-2 rounded-full bg-background/20 overflow-hidden">
@@ -272,7 +278,7 @@ export default function QuizPlayRoom({
 
           <p className="text-lg font-medium">{currentQuestion.questionText}</p>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {currentQuestion.options?.map((option) => (
+            {shuffledOptions?.map((option) => (
               <li key={option.optionId}>
                 <button
                   type="button"
@@ -314,3 +320,26 @@ export default function QuizPlayRoom({
     </div>
   );
 }
+
+AudioPlayer.propTypes = {
+  audioUrl: PropTypes.string,
+  compact: PropTypes.bool
+};
+
+QuizPlayRoom.propTypes = {
+  quizStatus: PropTypes.string.isRequired,
+  currentQuestion: PropTypes.object,
+  questionIndex: PropTypes.number.isRequired,
+  totalQuestions: PropTypes.number.isRequired,
+  timeRemainingMs: PropTypes.number.isRequired,
+  questionDurationMs: PropTypes.number,
+  timerPercent: PropTypes.number.isRequired,
+  roundResults: PropTypes.array,
+  topThree: PropTypes.array,
+  localPeerId: PropTypes.string.isRequired,
+  handleSubmitAnswer: PropTypes.func.isRequired,
+  hasAnsweredCurrent: PropTypes.bool,
+  selectedOptionId: PropTypes.number,
+  correctOptionId: PropTypes.number,
+  setIsLeaderboardOpen: PropTypes.func.isRequired
+};

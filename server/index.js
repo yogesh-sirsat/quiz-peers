@@ -24,7 +24,7 @@ websocketHandler.setupWebSocketServer(wss); // Pass WebSocket server to handler
 
 app.use(
   cors({
-    origin: "*",
+    origin: allowedOrigins,
   })
 );
 

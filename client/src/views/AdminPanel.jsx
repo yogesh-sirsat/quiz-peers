@@ -47,7 +47,7 @@ import imageCompression from "browser-image-compression";
 
 export default function AdminPanel() {
   const navigate = useNavigate();
-  const { data: quizzes, isLoading: loadingQuizzes } = useGetAllQuizzesQuery(false);
+  const { data: quizzes, isLoading: loadingQuizzes } = useGetAllQuizzesQuery({ onlyValid: false, includeTesting: true });
   const [selectedQuizId, setSelectedQuizId] = useState(null);
   const { data: quizDetails } = useGetQuizByIdQuery(selectedQuizId, {
     skip: !selectedQuizId,
@@ -57,9 +57,17 @@ export default function AdminPanel() {
   const [updateQuiz] = useUpdateQuizMutation();
   const [deleteQuiz] = useDeleteQuizMutation();
 
+  const [searchQuery, setSearchQuery] = useState("");
   const { isOpen: isQuizModalOpen, onOpen: onQuizModalOpen, onOpenChange: onQuizModalOpenChange } = useDisclosure();
   const [quizModalMode, setQuizModalMode] = useState("create");
-  const [quizForm, setQuizForm] = useState({ quizName: "", description: "", coverImageUrl: "" });
+  const [quizForm, setQuizForm] = useState({ quizName: "", description: "", coverImageUrl: "", status: "draft" });
+
+  const filteredQuizzes = useMemo(() => {
+    if (!quizzes) return [];
+    return quizzes.filter(q => 
+        q.quiz_name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [quizzes, searchQuery]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -68,7 +76,7 @@ export default function AdminPanel() {
 
   const handleOpenCreateQuiz = () => {
     setQuizModalMode("create");
-    setQuizForm({ quizName: "", description: "", coverImageUrl: "" });
+    setQuizForm({ quizName: "", description: "", coverImageUrl: "", status: "draft" });
     onQuizModalOpen();
   };
 
@@ -79,6 +87,7 @@ export default function AdminPanel() {
       quizName: quiz.quiz_name,
       description: quiz.description || "",
       coverImageUrl: quiz.cover_image_url || "",
+      status: quiz.status || "draft"
     });
     onQuizModalOpen();
   };
@@ -106,7 +115,7 @@ export default function AdminPanel() {
 
   return (
     <section className="min-h-screen bg-background text-foreground">
-      <NavbarComponent />
+      <NavbarComponent isAdmin={true} />
       <div className="max-w-7xl mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-foreground">Quiz Admin Panel</h1>
@@ -131,6 +140,21 @@ export default function AdminPanel() {
             <CardHeader className="flex flex-col items-start px-6 pt-6">
               <h2 className="text-xl font-bold text-foreground">Your Quizzes</h2>
               <p className="text-small text-default-600 font-medium">Manage your quiz collection</p>
+              <div className="w-full mt-4">
+                <Input
+                  isClearable
+                  placeholder="Search quizzes..."
+                  size="sm"
+                  variant="flat"
+                  value={searchQuery}
+                  onValueChange={setSearchQuery}
+                  onClear={() => setSearchQuery("")}
+                  classNames={{
+                    input: "text-foreground font-medium",
+                    inputWrapper: "bg-default-100",
+                  }}
+                />
+              </div>
             </CardHeader>
             <Divider className="my-3" />
             <CardBody className="p-0 max-h-[70vh] overflow-y-auto">
@@ -138,7 +162,7 @@ export default function AdminPanel() {
                 <div className="p-6 flex justify-center text-foreground font-medium">Loading quizzes...</div>
               ) : (
                 <div className="flex flex-col">
-                  {quizzes?.map((quiz) => (
+                  {filteredQuizzes?.map((quiz) => (
                     <div
                       key={quiz.quiz_id}
                       className={`p-4 border-b border-default-100 cursor-pointer hover:bg-default-50 flex justify-between items-center transition-all ${
@@ -147,11 +171,19 @@ export default function AdminPanel() {
                       onClick={() => setSelectedQuizId(quiz.quiz_id)}
                     >
                       <div className="flex-1 min-w-0 pr-4">
-                        <p className="font-bold truncate text-foreground">{quiz.quiz_name}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="font-bold truncate text-foreground">{quiz.quiz_name}</p>
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${
+                                quiz.status === 'published' ? 'bg-success/20 text-success' :
+                                quiz.status === 'testing' ? 'bg-warning/20 text-warning' : 'bg-default/20 text-default-600'
+                            }`}>
+                                {quiz.status}
+                            </span>
+                        </div>
                         <p className="text-xs text-default-600 font-bold uppercase tracking-wider">{quiz.questions_count} Questions</p>
                       </div>
                       <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                        <Tooltip content="Edit Quiz Settings">
+                        <Tooltip content="Edit Quiz Settings" color="foreground">
                           <Button
                             isIconOnly
                             size="sm"
@@ -216,12 +248,21 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <Modal isOpen={isQuizModalOpen} onOpenChange={onQuizModalOpenChange} size="lg">
+      <Modal 
+        isOpen={isQuizModalOpen} 
+        onOpenChange={onQuizModalOpenChange} 
+        size="lg"
+        classNames={{
+            base: "text-foreground",
+            header: "border-b-[1px] border-default-100",
+            footer: "border-t-[1px] border-default-100",
+        }}
+      >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="text-xl font-bold text-foreground">{quizModalMode === "create" ? "Create New Quiz" : "Edit Quiz Settings"}</ModalHeader>
-              <ModalBody className="gap-4">
+              <ModalHeader className="text-xl font-bold">{quizModalMode === "create" ? "Create New Quiz" : "Edit Quiz Settings"}</ModalHeader>
+              <ModalBody className="gap-4 pt-6">
                 <Input
                   label="Quiz Title"
                   variant="bordered"
@@ -230,6 +271,10 @@ export default function AdminPanel() {
                   onChange={(e) => setQuizForm({ ...quizForm, quizName: e.target.value })}
                   isRequired
                   labelPlacement="outside"
+                  classNames={{
+                    label: "font-bold text-foreground",
+                    input: "text-foreground",
+                  }}
                 />
                 <Textarea
                   label="Description"
@@ -238,7 +283,32 @@ export default function AdminPanel() {
                   value={quizForm.description}
                   onChange={(e) => setQuizForm({ ...quizForm, description: e.target.value })}
                   labelPlacement="outside"
+                  classNames={{
+                    label: "font-bold text-foreground",
+                    input: "text-foreground",
+                  }}
                 />
+                
+                <Select
+                  label="Status"
+                  variant="bordered"
+                  labelPlacement="outside"
+                  placeholder="Select quiz status"
+                  selectedKeys={[quizForm.status]}
+                  onSelectionChange={(keys) => setQuizForm({ ...quizForm, status: Array.from(keys)[0] })}
+                  classNames={{
+                    label: "font-bold text-foreground",
+                    value: "text-foreground",
+                  }}
+                  popoverProps={{
+                    className: "dark text-foreground"
+                  }}
+                >
+                  <SelectItem key="draft" value="draft">Draft</SelectItem>
+                  <SelectItem key="published" value="published">Published</SelectItem>
+                  <SelectItem key="testing" value="testing">Testing</SelectItem>
+                </Select>
+
                 <div className="space-y-2">
                     <Input
                         label="Cover Image URL (Optional)"
@@ -248,6 +318,10 @@ export default function AdminPanel() {
                         onChange={(e) => setQuizForm({ ...quizForm, coverImageUrl: e.target.value })}
                         endContent={<ImageIcon size={18} className="text-default-400" />}
                         labelPlacement="outside"
+                        classNames={{
+                            label: "font-bold text-foreground",
+                            input: "text-foreground",
+                        }}
                     />
                     <FileUpload 
                         onUpload={(url) => setQuizForm({ ...quizForm, coverImageUrl: url })} 
@@ -299,9 +373,7 @@ function FileUpload({ onUpload, label, accept = "*/*", folder = "misc" }) {
                     useWebWorker: true,
                     onProgress: (p) => setCompressionProgress(p),
                 };
-                console.log(`Original size: ${file.size / 1024 / 1024} MB`);
                 file = await imageCompression(file, options);
-                console.log(`Compressed size: ${file.size / 1024 / 1024} MB`);
             } catch (error) {
                 console.error("Compression error:", error);
             } finally {
@@ -461,44 +533,44 @@ function QuestionsManager({ quizId }) {
                 <OptionsManager questionId={q.questionId} correctOptionId={q.correctOptionId} />
                 
                 <Divider />
-                <div className="flex flex-wrap justify-between items-center bg-default-50 -mx-4 -mb-4 p-4 gap-3">
-                    <Tooltip content="Remove from this quiz only">
+                <div className="flex flex-col xs:flex-row justify-between items-stretch xs:items-center bg-default-50 p-4 gap-4">
+                    <Tooltip content="Remove from this quiz only" color="foreground">
                         <Button 
-                            size="sm" 
+                            size="md" 
                             color="warning" 
                             variant="flat" 
-                            startContent={<X size={16} />} 
+                            startContent={<X size={18} />} 
                             onClick={() => {
                                 if(window.confirm("Remove this question from this quiz?")) {
                                     removeQuestionFromQuiz({ quizId, questionId: q.questionId });
                                 }
                             }}
-                            className="font-bold"
+                            className="font-bold flex-1 xs:flex-initial"
                         >
                             Remove from Quiz
                         </Button>
                     </Tooltip>
                     
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 flex-1 xs:flex-initial">
                         <Button 
-                            size="sm" 
+                            size="md" 
                             variant="solid" 
                             color="primary"
-                            startContent={<Edit size={16} />} 
+                            startContent={<Edit size={18} />} 
                             onClick={() => handleOpenEdit(q)}
-                            className="font-bold"
+                            className="font-bold flex-1"
                         >
-                            Edit Details
+                            Edit
                         </Button>
                         <Button 
-                            size="sm" 
+                            size="md" 
                             color="danger" 
                             variant="flat" 
-                            startContent={<Trash2 size={16} />} 
+                            startContent={<Trash2 size={18} />} 
                             onClick={() => handleDelete(q.questionId)}
-                            className="font-bold"
+                            className="font-bold flex-1"
                         >
-                            Delete DB
+                            Delete
                         </Button>
                     </div>
                 </div>
@@ -508,12 +580,21 @@ function QuestionsManager({ quizId }) {
         </Accordion>
       )}
 
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+      <Modal 
+        isOpen={isOpen} 
+        onOpenChange={onOpenChange} 
+        size="2xl"
+        classNames={{
+            base: "text-foreground",
+            header: "border-b-[1px] border-default-100",
+            footer: "border-t-[1px] border-default-100",
+        }}
+      >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="text-xl font-bold text-foreground">{modalMode === "create" ? "Add New Question" : "Edit Question Details"}</ModalHeader>
-              <ModalBody className="gap-6">
+              <ModalHeader className="text-xl font-bold">{modalMode === "create" ? "Add New Question" : "Edit Question Details"}</ModalHeader>
+              <ModalBody className="gap-6 pt-6">
                 <Textarea
                   label="Question Text"
                   variant="bordered"
@@ -522,6 +603,10 @@ function QuestionsManager({ quizId }) {
                   onChange={(e) => setForm({ ...form, questionText: e.target.value })}
                   isRequired
                   labelPlacement="outside"
+                  classNames={{
+                    label: "font-bold text-foreground",
+                    input: "text-foreground",
+                  }}
                 />
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -531,6 +616,13 @@ function QuestionsManager({ quizId }) {
                         selectedKeys={[form.difficulty]}
                         onSelectionChange={(keys) => setForm({ ...form, difficulty: Array.from(keys)[0] })}
                         labelPlacement="outside"
+                        classNames={{
+                            label: "font-bold text-foreground",
+                            value: "text-foreground",
+                        }}
+                        popoverProps={{
+                            className: "dark text-foreground"
+                        }}
                     >
                         <SelectItem key="Easy" value="Easy">Easy</SelectItem>
                         <SelectItem key="Medium" value="Medium">Medium</SelectItem>
@@ -544,6 +636,13 @@ function QuestionsManager({ quizId }) {
                         selectedKeys={form.categoryId ? [form.categoryId] : []}
                         onSelectionChange={(keys) => setForm({ ...form, categoryId: Array.from(keys)[0] })}
                         labelPlacement="outside"
+                        classNames={{
+                            label: "font-bold text-foreground",
+                            value: "text-foreground",
+                        }}
+                        popoverProps={{
+                            className: "dark text-foreground"
+                        }}
                     >
                         {categories?.map((cat) => (
                             <SelectItem key={String(cat.category_id)} value={String(cat.category_id)}>
@@ -563,6 +662,10 @@ function QuestionsManager({ quizId }) {
                             onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
                             endContent={<ImageIcon size={18} className="text-default-400" />}
                             labelPlacement="outside"
+                            classNames={{
+                                label: "font-bold text-foreground",
+                                input: "text-foreground",
+                            }}
                         />
                         <FileUpload 
                             onUpload={(url) => setForm({ ...form, imageUrl: url })} 
@@ -580,6 +683,10 @@ function QuestionsManager({ quizId }) {
                             onChange={(e) => setForm({ ...form, audioUrl: e.target.value })}
                             endContent={<Music size={18} className="text-default-400" />}
                             labelPlacement="outside"
+                            classNames={{
+                                label: "font-bold text-foreground",
+                                input: "text-foreground",
+                            }}
                         />
                         <FileUpload 
                             onUpload={(url) => setForm({ ...form, audioUrl: url })} 
@@ -691,7 +798,7 @@ function OptionsManager({ questionId, correctOptionId }) {
           >
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3 min-w-0">
-                    <Tooltip content={Number(correctOptionId) === Number(opt.option_id) ? "Correct Answer" : "Mark as Correct"}>
+                    <Tooltip content={Number(correctOptionId) === Number(opt.option_id) ? "Correct Answer" : "Mark as Correct"} color="foreground">
                         <div 
                             className="cursor-pointer group shrink-0"
                             onClick={() => setCorrectOption({ questionId, optionId: opt.option_id })}
@@ -725,12 +832,20 @@ function OptionsManager({ questionId, correctOptionId }) {
         ))}
       </div>
 
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+      <Modal 
+        isOpen={isOpen} 
+        onOpenChange={onOpenChange}
+        classNames={{
+            base: "text-foreground",
+            header: "border-b-[1px] border-default-100",
+            footer: "border-t-[1px] border-default-100",
+        }}
+      >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="font-bold text-foreground">{modalMode === "create" ? "Add New Option" : "Edit Option"}</ModalHeader>
-              <ModalBody className="gap-4">
+              <ModalHeader className="font-bold">{modalMode === "create" ? "Add New Option" : "Edit Option"}</ModalHeader>
+              <ModalBody className="gap-4 pt-6">
                 <Input
                   label="Option Text"
                   variant="bordered"
@@ -738,6 +853,10 @@ function OptionsManager({ questionId, correctOptionId }) {
                   value={form.optionText}
                   onChange={(e) => setForm({ ...form, optionText: e.target.value })}
                   labelPlacement="outside"
+                  classNames={{
+                    label: "font-bold text-foreground",
+                    input: "text-foreground",
+                  }}
                 />
                 <div className="grid grid-cols-1 gap-6 mt-2">
                     <div className="space-y-2">
@@ -748,6 +867,10 @@ function OptionsManager({ questionId, correctOptionId }) {
                             value={form.imageUrl}
                             onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
                             labelPlacement="outside"
+                            classNames={{
+                                label: "font-bold text-foreground",
+                                input: "text-foreground",
+                            }}
                         />
                         <FileUpload 
                             onUpload={(url) => setForm({ ...form, imageUrl: url })} 
@@ -764,6 +887,10 @@ function OptionsManager({ questionId, correctOptionId }) {
                             value={form.audioUrl}
                             onChange={(e) => setForm({ ...form, audioUrl: e.target.value })}
                             labelPlacement="outside"
+                            classNames={{
+                                label: "font-bold text-foreground",
+                                input: "text-foreground",
+                            }}
                         />
                         <FileUpload 
                             onUpload={(url) => setForm({ ...form, audioUrl: url })} 

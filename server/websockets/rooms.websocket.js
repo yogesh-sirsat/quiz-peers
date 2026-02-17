@@ -295,7 +295,8 @@ async function startQuiz(roomId, isRoomPublic) {
 
 export function handleReadyToStart(ws, data) {
   try {
-    const room = getWaitingRoom(data?.roomId, true);
+    const isRoomPublic = data?.isRoomPublic ?? true;
+    const room = getWaitingRoom(data?.roomId, isRoomPublic);
     if (!room || !room.has(ws.peerId)) {
       safeSend(ws, { event: "readyToStartFailed", message: "Room not found." });
       return;
@@ -305,11 +306,13 @@ export function handleReadyToStart(ws, data) {
     player.readyToStart = data?.readyToStart ?? true;
     room.set(ws.peerId, player);
 
-    emitWaitingRoomState(data?.roomId, true);
+    emitWaitingRoomState(data?.roomId, isRoomPublic);
 
-    const everyPlayerReady = Array.from(room.values()).every((roomPlayer) => roomPlayer.readyToStart);
-    if (everyPlayerReady && room.size > 0) {
-      startQuiz(data?.roomId, true);
+    if (isRoomPublic) {
+      const everyPlayerReady = Array.from(room.values()).every((roomPlayer) => roomPlayer.readyToStart);
+      if (everyPlayerReady && room.size > 0) {
+        startQuiz(data?.roomId, true);
+      }
     }
   } catch (error) {
     console.error(error);

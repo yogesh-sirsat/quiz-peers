@@ -3,7 +3,7 @@ import { Button, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org
 import NavbarComponent from "../components/ui/Navbar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import QuizNameCard from "../components/quiz-meet-room/QuizNameCard";
-import { Crown, Mic, MicOff, Trophy, Pencil, FastForward } from "lucide-react";
+import { Crown, Mic, MicOff, Trophy, Pencil, FastForward, Share2, Check } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import Peer from "peerjs";
 import { MEDIA_CONSTRAINTS } from "../config/mediaConfig.js";
@@ -84,6 +84,7 @@ export default function QuizMeetRoom() {
   const [selectedAudioDevice, setSelectedAudioDevice] = useState(null);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isNameModalOpen, setIsNameModalOpen] = useState(false);
+  const [isLinkCopied, setIsLinkCopied] = useState(false);
 
   const [hostPeerId, setHostPeerId] = useState(null);
   const [readyPeerIds, setReadyPeerIds] = useState([]);
@@ -111,6 +112,12 @@ export default function QuizMeetRoom() {
   const localStreamRef = useRef(new MediaStream());
   const wsRef = useRef(null);
 
+  const handleShareLink = useCallback(() => {
+    navigator.clipboard.writeText(window.location.href);
+    setIsLinkCopied(true);
+    setTimeout(() => setIsLinkCopied(false), 2000);
+  }, []);
+
   const sendJson = useCallback((data) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(data));
@@ -123,7 +130,6 @@ export default function QuizMeetRoom() {
   const roomPlayers = useSelector((state) => state.room.roomPlayers);
 
   const isHost = useMemo(() => hostPeerId && localPeerId && hostPeerId === localPeerId, [hostPeerId, localPeerId]);
-  const readyCount = readyPeerIds.length;
 
   const toggleMute = useCallback((peerId, currentMuteStatus) => {
     dispatch(addUpdateRoomPlayer({
@@ -260,24 +266,26 @@ export default function QuizMeetRoom() {
   }, [handlePlayerDataConnection]);
 
   const handleStartClick = useCallback(() => {
-    if (isRoomPublic) {
-      const nextReady = !isReadyToStart;
-      setIsReadyToStart(nextReady);
+    // If it's a private room and the user is the host, they are actually STARTING the quiz.
+    if (!isRoomPublic && isHost) {
       sendJson({
-        event: "readyToStart",
+        event: "startPrivateQuiz",
         roomId,
-        isRoomPublic: true,
-        readyToStart: nextReady
+        isRoomPublic: false
       });
       return;
     }
 
+    // Otherwise, for both public rooms and private room non-hosts, it's a "Ready" toggle.
+    const nextReady = !isReadyToStart;
+    setIsReadyToStart(nextReady);
     sendJson({
-      event: "startPrivateQuiz",
+      event: "readyToStart",
       roomId,
-      isRoomPublic: false
+      isRoomPublic,
+      readyToStart: nextReady
     });
-  }, [isRoomPublic, isReadyToStart, roomId, sendJson]);
+  }, [isRoomPublic, isHost, isReadyToStart, roomId, sendJson]);
 
   const handleSubmitAnswer = useCallback((optionId) => {
     if (!currentQuestion || quizStatus !== "playing") {
@@ -606,32 +614,61 @@ export default function QuizMeetRoom() {
               >
                 <span className="hidden xs:inline">Leaderboard</span>
               </Button>
+              {quizStatus === "waiting" && (
+                <Button
+                    variant="flat"
+                    radius="sm"
+                    size="sm"
+                    color={isLinkCopied ? "success" : "default"}
+                    startContent={isLinkCopied ? <Check size={18} /> : <Share2 size={18} />}
+                    onClick={handleShareLink}
+                    className="min-w-0 px-3 w-[120px]"
+                >
+                    <span className="hidden xs:inline">{isLinkCopied ? "Copied!" : "Invite Friends"}</span>
+                </Button>
+              )}
               <TextChatInterface localPeerId={localPeerId} localPlayerName={playerName} />
             </div>
           </div>
 
           {quizStatus === "waiting" && (
             <div className="rounded-xl border border-background/20 bg-background/10 p-3">
-              {isRoomPublic ? (
-                <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2">
-                  <p className="text-sm">
-                    Public room starts when everyone is ready. Ready: {readyCount}/{totalPlayers || 1}
+              <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3">
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-medium">
+                    {isRoomPublic ? "Public Room" : "Private Room"} | Ready: {readyPeerIds.length}/{totalPlayers}
                   </p>
-                  <Button color={isReadyToStart ? "warning" : "success"} onClick={handleStartClick} isDisabled={!isWsConnected}>
-                    {isReadyToStart ? "Cancel Ready" : "Start Quiz"}
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2">
-                  <p className="text-sm flex items-center gap-1">
-                    <Crown size={16} className={isHost ? "text-amber-300" : "opacity-70"} />
-                    {isHost ? "You created this private room. Start when everyone is ready." : "Waiting for quiz creator to start."}
+                  <p className="text-xs opacity-70 flex items-center gap-1">
+                    {!isRoomPublic && (
+                      <>
+                        <Crown size={14} className={isHost ? "text-amber-300" : ""} />
+                        {isHost ? "Host controls the start." : "Waiting for host to start."}
+                      </>
+                    )}
+                    {isRoomPublic && "Auto-starts when everyone is ready."}
                   </p>
-                  <Button color="secondary" onClick={handleStartClick} isDisabled={!isHost || !isWsConnected}>
-                    Start Quiz
-                  </Button>
                 </div>
-              )}
+                <div className="flex gap-2 w-full xs:w-auto">
+                  <Button 
+                    className="flex-1 xs:flex-initial"
+                    color={isReadyToStart ? "secondary" : "success"} 
+                    onClick={handleStartClick} 
+                    isDisabled={!isWsConnected}
+                  >
+                    {isReadyToStart ? "READY" : "Ready Up"}
+                  </Button>
+                  {!isRoomPublic && isHost && (
+                    <Button 
+                      className="flex-1 xs:flex-initial"
+                      color="primary" 
+                      onClick={handleStartClick} 
+                      isDisabled={!isWsConnected}
+                    >
+                      Start Quiz
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
