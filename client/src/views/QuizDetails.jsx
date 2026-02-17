@@ -59,7 +59,12 @@ export default function QuizDetails() {
           <>Loading...</>
         ) : data ? (
           <article className="text-foreground flex flex-col items-center bg-background/60 shadow-2xl p-3 xxs:p-5 xs:p-7 rounded-2xl">
-            <Image isBlurred isZoomed src={data?.cover_image_url} />
+            <Image 
+              isBlurred 
+              isZoomed 
+              src={data?.cover_image_url} 
+              className="max-h-[360px] max-w-[640px] object-contain rounded-xl"
+            />
             <div className="w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] flex flex-col gap-2 pt-4">
               <h1 className="font-semibold text-2xl xs:text-3xl sm:text-4xl break-words">{data?.quiz_name}</h1>
 
@@ -73,7 +78,7 @@ export default function QuizDetails() {
                 {...{
                   successRate: data?.success_rate,
                   contestantsCount: data?.contestants_count,
-                  totalQuestions: data?.total_questions
+                  questionsCount: data?.questions_count
                 }}
               />
               <Divider className="my-2 md:my-4" />

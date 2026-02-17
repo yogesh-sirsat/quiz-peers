@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@nextui-org/react";
 import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 
-export default function NavbarComponent() {
+export default function NavbarComponent({ isAdmin = false }) {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNavbarBlurred, setIsNavbarBlurred] = useState(false);
@@ -43,7 +44,7 @@ export default function NavbarComponent() {
         /> */}
         <Link
           className="cursor-pointer"
-          color="foreground"
+          color={isAdmin ? "secondary" : "foreground"}
           onPress={() => {
             navigate("/");
             window.scrollTo(0, 0);
@@ -55,11 +56,25 @@ export default function NavbarComponent() {
 
       <NavbarContent className="hidden smd:flex gap-4" justify="end">
         <NavbarItem>
-          <h3 className="text-xl">Real-time Multiplayer Quizzes</h3>
+          <h3 className={isAdmin ? "text-xl text-primary font-medium" : "text-xl"}>
+            {isAdmin ? "Admin Dashboard" : "Real-time Multiplayer Quizzes"}
+          </h3>
         </NavbarItem>
       </NavbarContent>
 
      
+      
+     
     </Navbar>
+     
   );
+     
 }
+     
+
+     
+NavbarComponent.propTypes = {
+     
+  isAdmin: PropTypes.bool
+     
+};

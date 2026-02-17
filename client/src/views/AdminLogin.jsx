@@ -32,7 +32,7 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-background">
-      <NavbarComponent />
+      <NavbarComponent isAdmin={true} />
       <div className="flex justify-center items-center h-[calc(100vh-64px)] px-4">
         <Card className="p-4 w-full max-w-md shadow-2xl border-none">
           <CardHeader className="flex flex-col gap-1 items-center pb-6 pt-8">

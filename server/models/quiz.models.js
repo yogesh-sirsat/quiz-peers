@@ -1,11 +1,13 @@
 import * as db from "../database/postgres.database.js";
 
-export async function getAllQuizzesData(onlyValid = true) {
+export async function getAllQuizzesData(onlyValid = true, includeTesting = false) {
   let query = `
       SELECT
         qz.quiz_id,
         qz.quiz_name,
+        qz.description,
         qz.cover_image_url,
+        qz.status,
         qz.created_at,
         qz.contestants_count,
         qz.success_rate,
@@ -18,9 +20,11 @@ export async function getAllQuizzesData(onlyValid = true) {
         LEFT JOIN quiz_categories qc ON qq.category_id = qc.category_id
   `;
 
+  const whereClauses = [];
+
   if (onlyValid) {
-    query += `
-      WHERE EXISTS (
+    whereClauses.push(`
+      EXISTS (
         SELECT 1 FROM quiz_question_relationships qqr2
         WHERE qqr2.quiz_id = qz.quiz_id
       )
@@ -34,7 +38,17 @@ export async function getAllQuizzesData(onlyValid = true) {
           OR NOT EXISTS (SELECT 1 FROM quiz_options qo WHERE qo.question_id = qq3.question_id)
         )
       )
-    `;
+    `);
+  }
+
+  if (!includeTesting) {
+    whereClauses.push(`qz.status = 'published'`);
+  } else {
+    whereClauses.push(`qz.status IN ('published', 'testing')`);
+  }
+
+  if (whereClauses.length > 0) {
+    query += ` WHERE ` + whereClauses.join(" AND ");
   }
 
   query += `
@@ -45,27 +59,28 @@ export async function getAllQuizzesData(onlyValid = true) {
   return result.rows;
 }
 
-export async function createQuizData({ quizName, description, coverImageUrl }) {
+export async function createQuizData({ quizName, description, coverImageUrl, status = 'draft' }) {
   const query = `
-    INSERT INTO quizzes (quiz_name, description, cover_image_url)
-    VALUES ($1, $2, $3)
+    INSERT INTO quizzes (quiz_name, description, cover_image_url, status)
+    VALUES ($1, $2, $3, $4)
     RETURNING *
   `;
-  const result = await db.query(query, [quizName, description, coverImageUrl]);
+  const result = await db.query(query, [quizName, description, coverImageUrl, status]);
   return result.rows[0];
 }
 
-export async function updateQuizData(quizId, { quizName, description, coverImageUrl }) {
+export async function updateQuizData(quizId, { quizName, description, coverImageUrl, status }) {
   const query = `
     UPDATE quizzes
     SET quiz_name = COALESCE($1, quiz_name),
         description = COALESCE($2, description),
         cover_image_url = COALESCE($3, cover_image_url),
+        status = COALESCE($4, status),
         updated_at = CURRENT_TIMESTAMP
-    WHERE quiz_id = $4
+    WHERE quiz_id = $5
     RETURNING *
   `;
-  const result = await db.query(query, [quizName, description, coverImageUrl, quizId]);
+  const result = await db.query(query, [quizName, description, coverImageUrl, status, quizId]);
   return result.rows[0];
 }
 
@@ -99,17 +114,18 @@ export async function getQuizByIdData(quizId) {
       qz.quiz_name,
       qz.description,
       qz.cover_image_url,
+      qz.status,
       qz.created_at,
       qz.updated_at,
       qz.contestants_count,
       ROUND(qz.success_rate) success_rate,
       Count(qq.question_id) questions_count,
-      array_agg (DISTINCT qc.category_name) categories 
+      array_agg (DISTINCT qc.category_name) FILTER (WHERE qc.category_name IS NOT NULL) categories 
     FROM
       quizzes qz
       LEFT JOIN quiz_question_relationships qqr ON qz.quiz_id = qqr.quiz_id
       LEFT JOIN quiz_questions qq ON qqr.question_id = qq.question_id
-      JOIN quiz_categories qc ON qq.category_id = qc.category_id
+      LEFT JOIN quiz_categories qc ON qq.category_id = qc.category_id
     WHERE
       qz.quiz_id = $1
     GROUP BY

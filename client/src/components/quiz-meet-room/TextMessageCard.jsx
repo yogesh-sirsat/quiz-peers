@@ -5,7 +5,11 @@ export default function TextMessageCard({ message, showName = true }) {
   const timeString = new Date(message?.timeStamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
   return (
-    <Card className={`min-w-48 max-w-full w-full ${!showName ? "rounded-tl-sm rounded-tr-sm" : ""}`} shadow="sm">
+    <Card 
+      className={`min-w-48 max-w-full w-full ${!showName ? "rounded-tl-sm rounded-tr-sm" : ""} bg-background/60`} 
+      shadow="sm"
+      isBlurred
+    >
       {showName && (
         <CardHeader className="flex pb-0 gap-2 items-center">
           <div className="min-w-6 w-6 h-6 rounded-full bg-secondary/20 flex items-center justify-center text-xs font-bold text-secondary uppercase">

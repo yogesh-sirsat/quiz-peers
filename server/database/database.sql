@@ -5,6 +5,7 @@ LIMIT
     = -1 IS_TEMPLATE = False;
 
 CREATE TYPE difficulty_level AS ENUM ('Easy', 'Medium', 'Hard');
+CREATE TYPE quiz_status AS ENUM ('draft', 'published', 'testing');
 
 CREATE TABLE
     quiz_categories (
@@ -41,8 +42,9 @@ CREATE TABLE
         description VARCHAR(500),
         calculated_difficulty difficulty_level,
         cover_image_url VARCHAR(255),
+        status quiz_status DEFAULT 'published',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
 CREATE TABLE

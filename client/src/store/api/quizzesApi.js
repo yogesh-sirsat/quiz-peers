@@ -9,7 +9,10 @@ export const quizzesApi = createApi({
   tagTypes: ["Quiz", "Question", "Option"],
   endpoints: (builder) => ({
     getAllQuizzes: builder.query({
-      query: (onlyValid = true) => `/quizzes?onlyValid=${onlyValid}`,
+      query: (params = {}) => {
+        const { onlyValid = true, includeTesting = false } = params;
+        return `/quizzes?onlyValid=${onlyValid}&includeTesting=${includeTesting}`;
+      },
       providesTags: ["Quiz"],
     }),
     getQuizById: builder.query({
