@@ -105,10 +105,19 @@ export default function QuizMeetRoom() {
   const [topThree, setTopThree] = useState([]);
   const [skipCount, setSkipCount] = useState(0);
   const [localStream, setLocalStream] = useState(null);
+  const [isWsConnected, setIsWsConnected] = useState(false);
 
   const peerRef = useRef(null);
   const localStreamRef = useRef(new MediaStream());
   const wsRef = useRef(null);
+
+  const sendJson = useCallback((data) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(data));
+    } else {
+      console.warn("WebSocket is not open. State:", wsRef.current?.readyState);
+    }
+  }, []);
   
   const isSpeaking = useAudioActivity(localStream);
   const roomPlayers = useSelector((state) => state.room.roomPlayers);
@@ -124,14 +133,13 @@ export default function QuizMeetRoom() {
   }, [dispatch]);
 
   const handleSaveName = useCallback((newName) => {
-    if (!wsRef.current) return;
-    wsRef.current.send(JSON.stringify({
+    sendJson({
       event: "changePlayerName",
       roomId,
       isRoomPublic,
       newName
-    }));
-  }, [isRoomPublic, roomId]);
+    });
+  }, [isRoomPublic, roomId, sendJson]);
 
   useEffect(() => {
     const isPublicParams = searchParams.get("public");
@@ -252,53 +260,59 @@ export default function QuizMeetRoom() {
   }, [handlePlayerDataConnection]);
 
   const handleStartClick = useCallback(() => {
-    if (!wsRef.current) {
-      return;
-    }
     if (isRoomPublic) {
       const nextReady = !isReadyToStart;
       setIsReadyToStart(nextReady);
-      wsRef.current.send(JSON.stringify({
+      sendJson({
         event: "readyToStart",
         roomId,
         isRoomPublic: true,
         readyToStart: nextReady
-      }));
+      });
       return;
     }
 
-    wsRef.current.send(JSON.stringify({
+    sendJson({
       event: "startPrivateQuiz",
       roomId,
       isRoomPublic: false
-    }));
-  }, [isRoomPublic, isReadyToStart, roomId]);
+    });
+  }, [isRoomPublic, isReadyToStart, roomId, sendJson]);
 
   const handleSubmitAnswer = useCallback((optionId) => {
-    if (!wsRef.current || !currentQuestion || quizStatus !== "playing") {
+    if (!currentQuestion || quizStatus !== "playing") {
       return;
     }
     setHasAnsweredCurrent(true);
     setSelectedOptionId(optionId);
-    wsRef.current.send(JSON.stringify({
+    sendJson({
       event: "submitAnswer",
       roomId,
       isRoomPublic,
       optionId
-    }));
-  }, [currentQuestion, isRoomPublic, quizStatus, roomId]);
+    });
+  }, [currentQuestion, isRoomPublic, quizStatus, roomId, sendJson]);
 
   const handleSkipTimer = useCallback(() => {
-    if (!wsRef.current) return;
-    wsRef.current.send(JSON.stringify({
+    sendJson({
       event: "skipTimer",
       roomId,
       isRoomPublic
-    }));
-  }, [isRoomPublic, roomId]);
+    });
+  }, [isRoomPublic, roomId, sendJson]);
 
   useEffect(() => {
-    if (!wsRef.current) {
+    const checkStatus = () => {
+      if (wsRef.current) {
+        setIsWsConnected(wsRef.current.readyState === WebSocket.OPEN);
+      }
+    };
+    const interval = setInterval(checkStatus, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.CLOSED) {
       wsRef.current = new WebSocket(webSocketUrl);
     }
     let peerId;
@@ -348,6 +362,7 @@ export default function QuizMeetRoom() {
     });
 
     wsRef.current.onopen = () => {
+      setIsWsConnected(true);
       try {
         wsRef.current.send(JSON.stringify({
           roomId, quizId, peerId, event: "joinRoom", isRoomPublic
@@ -459,15 +474,28 @@ export default function QuizMeetRoom() {
 
     wsRef.current.onerror = (error) => {
       console.log(error);
+      setIsWsConnected(false);
+    };
+
+    wsRef.current.onclose = () => {
+      setIsWsConnected(false);
     };
 
     return () => {
+      console.log("Cleaning up WebSocket and Peer...");
       if (wsRef?.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.onerror = null;
+        wsRef.current.onmessage = null;
+        wsRef.current.onopen = null;
         wsRef.current.close();
+        wsRef.current = null;
       }
       if (peerRef?.current) {
         peerRef.current.destroy();
+        peerRef.current = null;
       }
+      setIsWsConnected(false);
     };
   }, [dispatch, handleConnectionData, handleJoinRoomSuccess, isRoomPublic, navigate, quizId, roomId, webSocketUrl]);
 
@@ -549,7 +577,12 @@ export default function QuizMeetRoom() {
 
         <section className="mb-6 flex flex-col gap-3 text-foreground bg-background/60 shadow-2xl p-3 xxs:p-4 xs:p-6 rounded-2xl overflow-y-auto">
           <div className="flex flex-row justify-between items-center mb-1 pr-1 gap-2">
-            <h1 className="text-xl xs:text-2xl font-semibold">Quiz Room</h1>
+            <div className="flex flex-col">
+                <h1 className="text-xl xs:text-2xl font-semibold">Quiz Room</h1>
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${isWsConnected ? 'text-success-300' : 'text-danger animate-pulse'}`}>
+                    {isWsConnected ? '● Connected' : '○ Reconnecting...'}
+                </p>
+            </div>
             <div className="flex items-center gap-2">
               {quizStatus === "playing" && hasAnsweredCurrent && correctOptionId === null && (
                 <Button
@@ -584,7 +617,7 @@ export default function QuizMeetRoom() {
                   <p className="text-sm">
                     Public room starts when everyone is ready. Ready: {readyCount}/{totalPlayers || 1}
                   </p>
-                  <Button color={isReadyToStart ? "warning" : "success"} onClick={handleStartClick}>
+                  <Button color={isReadyToStart ? "warning" : "success"} onClick={handleStartClick} isDisabled={!isWsConnected}>
                     {isReadyToStart ? "Cancel Ready" : "Start Quiz"}
                   </Button>
                 </div>
@@ -594,7 +627,7 @@ export default function QuizMeetRoom() {
                     <Crown size={16} className={isHost ? "text-amber-300" : "opacity-70"} />
                     {isHost ? "You created this private room. Start when everyone is ready." : "Waiting for quiz creator to start."}
                   </p>
-                  <Button color="secondary" onClick={handleStartClick} isDisabled={!isHost}>
+                  <Button color="secondary" onClick={handleStartClick} isDisabled={!isHost || !isWsConnected}>
                     Start Quiz
                   </Button>
                 </div>

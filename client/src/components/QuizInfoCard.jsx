@@ -12,7 +12,7 @@ function QuizInfoCard({ quizInfo }) {
         <div className="relative">
           <Image
             alt={quizInfo?.quiz_name + " cover image"}
-            className="object-cover rounded-xl"
+            className="object-contain rounded-xl h-48 w-full bg-black/5"
             src={quizInfo?.cover_image_url}
             isBlurred
             isZoomed

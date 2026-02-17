@@ -4,7 +4,9 @@ import {
   getQuizById,
   createQuiz,
   updateQuiz,
-  deleteQuiz
+  deleteQuiz,
+  getQuizQuestions,
+  getAllCategories
 } from "../controllers/quizzes.controller.js";
 import { addQuestionToQuiz, removeQuestionFromQuiz } from "../controllers/questions.controller.js";
 
@@ -16,6 +18,8 @@ router.post("/", createQuiz);
 router.get("/:quizId", getQuizById);
 router.patch("/:quizId", updateQuiz);
 router.delete("/:quizId", deleteQuiz);
+router.get("/:quizId/get-questions", getQuizQuestions);
+router.get("/categories/all", getAllCategories);
 
 // Relationship routes
 router.post("/:quizId/questions", addQuestionToQuiz);

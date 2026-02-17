@@ -171,7 +171,7 @@ export async function getQuizQuestionsForPlay(quizId) {
     });
   });
 
-  return questionsResult.rows.map((question) => ({
+  const allQuestions = questionsResult.rows.map((question) => ({
     questionId: question.question_id,
     questionText: question.question_text,
     imageUrl: question.image_url,
@@ -180,6 +180,22 @@ export async function getQuizQuestionsForPlay(quizId) {
     correctOptionId: question.correct_option_id,
     options: optionsByQuestionId.get(question.question_id) || []
   }));
+
+  // Filter out questions that don't have a correct option set OR don't have any options
+  const playableQuestions = allQuestions.filter(q => {
+    const hasOptions = q.options.length > 0;
+    const hasCorrectOption = q.correctOptionId !== null && q.correctOptionId !== undefined;
+    
+    if (!hasOptions || !hasCorrectOption) {
+        console.warn(`Question ${q.questionId} ("${q.questionText}") is not playable: HasOptions=${hasOptions}, HasCorrect=${hasCorrectOption}`);
+    }
+    
+    return hasOptions && hasCorrectOption;
+  });
+
+  console.log(`getQuizQuestionsForPlay: Found ${playableQuestions.length} playable questions for quiz ${quizId} (out of ${allQuestions.length} total)`);
+
+  return playableQuestions;
 }
 
 export async function updateQuizStats(quizId, playerCount, sessionSuccessRate) {
@@ -194,4 +210,10 @@ export async function updateQuizStats(quizId, playerCount, sessionSuccessRate) {
     WHERE quiz_id = $1
   `;
   await db.query(query, [quizId, playerCount, sessionSuccessRate]);
+}
+
+export async function getAllCategoriesData() {
+  const query = `SELECT * FROM quiz_categories ORDER BY category_name ASC`;
+  const result = await db.query(query);
+  return result.rows;
 }

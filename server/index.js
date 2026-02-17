@@ -8,6 +8,7 @@ import quizzesRoutes from "./routes/quizzes.routes.js";
 import roomsRoutes from "./routes/rooms.routes.js";
 import questionsRoutes from "./routes/questions.routes.js";
 import optionsRoutes from "./routes/options.routes.js";
+import mediaRoutes from "./routes/media.routes.js";
 import "dotenv/config";
 
 const app = express();
@@ -40,6 +41,7 @@ app.use("/api/quizzes", quizzesRoutes);
 app.use("/api/rooms", roomsRoutes);
 app.use("/api/questions", questionsRoutes);
 app.use("/api/options", optionsRoutes);
+app.use("/api/media", mediaRoutes);
 
 app.use((req, res) => {
   res.status(404).send("Page not found");

@@ -1,7 +1,55 @@
 import { Button } from "@nextui-org/react";
-import { Sparkles, Timer, Crown } from "lucide-react";
+import { Sparkles, Timer, Crown, Music, Play, Pause } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+function AudioPlayer({ audioUrl, compact }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    audioRef.current = new Audio(audioUrl);
+    audioRef.current.onended = () => setIsPlaying(false);
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, [audioUrl]);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(err => console.error("Audio playback failed", err));
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  return (
+    <div className={`flex items-center gap-2 bg-background/20 p-2 rounded-xl border border-background/10 w-full ${compact ? "py-1" : ""}`}>
+      <div className="p-1.5 bg-primary/20 text-primary rounded-lg shrink-0">
+        <Music size={compact ? 14 : 18} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-bold uppercase opacity-50 leading-none mb-0.5 truncate">Audio</p>
+      </div>
+      <Button 
+        isIconOnly 
+        size="sm" 
+        variant="flat" 
+        color={isPlaying ? "secondary" : "primary"}
+        onClick={togglePlay}
+        className="shrink-0 h-8 w-8 min-w-8"
+      >
+        {isPlaying ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
+      </Button>
+    </div>
+  );
+}
 
 export default function QuizPlayRoom({
   quizStatus,
@@ -207,47 +255,46 @@ export default function QuizPlayRoom({
       {currentQuestion ? (
         <>
           {currentQuestion.imageUrl && (
-            <div className="w-full flex justify-center mb-4">
+            <div className="w-full flex justify-center mb-4 bg-black/5 rounded-xl overflow-hidden h-60">
               <img
                 src={currentQuestion.imageUrl}
                 alt="Question Image"
-                className="rounded-lg max-h-60 object-contain"
+                className="h-full w-full object-contain"
               />
             </div>
           )}
           
           {currentQuestion.audioUrl && (
             <div className="w-full flex justify-center mb-4">
-               <audio controls autoPlay className="w-full">
-                  <source src={currentQuestion.audioUrl} type="audio/mpeg" />
-                  Your browser does not support the audio element.
-               </audio>
+               <AudioPlayer audioUrl={currentQuestion.audioUrl} />
             </div>
           )}
 
           <p className="text-lg font-medium">{currentQuestion.questionText}</p>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {currentQuestion.options?.map((option) => (
               <li key={option.optionId}>
                 <button
                   type="button"
                   onClick={() => handleSubmitAnswer(option.optionId)}
                   disabled={correctOptionId !== null}
-                  className={`w-full text-left rounded-xl border px-3 py-2 transition-colors flex flex-col gap-2 ${optionClassName(option.optionId)}`}
+                  className={`w-full text-left rounded-xl border-2 px-3 py-3 transition-all flex flex-col gap-3 min-h-[80px] ${optionClassName(option.optionId)}`}
                 >
                    {option.imageUrl && (
-                    <img
-                      src={option.imageUrl}
-                      alt="Option Image"
-                      className="rounded-md max-h-32 object-contain self-center"
-                    />
+                    <div className="w-full h-32 bg-black/5 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+                      <img
+                        src={option.imageUrl}
+                        alt="Option Image"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
                   )}
                   {option.audioUrl && (
-                    <audio controls className="w-full">
-                       <source src={option.audioUrl} type="audio/mpeg" />
-                    </audio>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <AudioPlayer audioUrl={option.audioUrl} compact />
+                    </div>
                   )}
-                  <span>{option.optionText || `Option ${option.optionId}`}</span>
+                  <span className="font-bold text-center sm:text-left">{option.optionText || `Option ${option.optionId}`}</span>
                 </button>
               </li>
             ))}
