@@ -43,7 +43,7 @@ export async function getQuestionById(req: Request, res: Response, next: NextFun
   }
 }
 
-export async function getAllQuestions(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getAllQuestions(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const data = await getAllQuestionsData();
     res.send(data);

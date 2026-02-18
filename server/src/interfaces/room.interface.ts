@@ -1,5 +1,7 @@
 import { ExtendedWebSocket } from './websocket.interface.ts';
-import { QuizQuestion } from './quiz.interface.ts';
+import { QuizQuestion } from '@quiz-peers/shared';
+
+export * from "@quiz-peers/shared";
 
 export interface RoomMeta {
   isPublic: boolean;

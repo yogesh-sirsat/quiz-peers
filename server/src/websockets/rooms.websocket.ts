@@ -2,7 +2,7 @@ import { generateRandomRoomId } from "../utils/rooms.utils.ts";
 import { getGeneratePlayerName } from "./players.websocket.ts";
 import HttpError from "../errors/app.error.ts";
 import { getQuizQuestionsForPlay, updateQuizStats } from "../models/quiz.models.ts";
-import { ExtendedWebSocket, WebSocketMessage } from "../interfaces/websocket.interface.ts";
+import { ExtendedWebSocket } from "../interfaces/websocket.interface.ts";
 import { QuizQuestion } from "../interfaces/quiz.interface.ts";
 
 export interface PlayerState {

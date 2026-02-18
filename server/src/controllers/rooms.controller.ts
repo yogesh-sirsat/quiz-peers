@@ -24,7 +24,7 @@ export async function getIdForPrivateRoom(req: Request, res: Response, next: Nex
 export async function getRoomDetailsById(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { roomId } = req.params;
-    const roomDetails = getRoomDetails(roomId);
+    const roomDetails = getRoomDetails(roomId as string);
     res.send({ ...roomDetails });
   } catch (error) {
     next(error);

@@ -1,0 +1,12 @@
+{
+  "name": "quiz-peers-monorepo",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server",
+    "shared"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

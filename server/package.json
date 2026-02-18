@@ -21,6 +21,7 @@
     "multer": "^2.0.2",
     "nanoid": "^5.1.0",
     "nodemon": "^3.1.4",
+    "@quiz-peers/shared": "*",
     "pg": "^8.12.0",
     "quiz-peers-server": "file:",
     "ws": "^8.17.1"

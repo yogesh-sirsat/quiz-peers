@@ -109,7 +109,7 @@ async function importQuiz() {
 
     console.log('✨ Import completed successfully!');
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Import failed:');
     if (error.response) {
       console.error(`  Status: ${error.response.status}`);
