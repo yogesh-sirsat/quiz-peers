@@ -17,14 +17,14 @@ export default function QuizDetails() {
   const navigate = useNavigate();
   dayjs.extend(relativeTime);
   // Using a query hook automatically fetches data and returns query values
-  const { data, error, isLoading } = useGetQuizByIdQuery(quizId || "");
+  const { data, error, isLoading } = useGetQuizByIdQuery(Number(quizId));
   const [triggerPublicRoomId, { isLoading: isLoadingPublicRoomId }] = useLazyGetPublicRoomIdQuery();
   const [triggerPrivateRoomId, { isLoading: isLoadingPrivateRoomId }] = useLazyGetIdForPrivateRoomQuery();
 
   const handleJoinPublic = async () => {
     if (!quizId) return;
     try {
-      const response: any = await triggerPublicRoomId(quizId);
+      const response: any = await triggerPublicRoomId(Number(quizId));
       if (response.isError) {
         throw new Error(response.error?.data?.message);
       }
@@ -39,7 +39,7 @@ export default function QuizDetails() {
   const handleCreatePrivate = async () => {
     if (!quizId) return;
     try {
-      const response: any = await triggerPrivateRoomId(quizId);
+      const response: any = await triggerPrivateRoomId(Number(quizId));
       if (response.isError) {
         throw new Error(response.error?.data?.message);
       }

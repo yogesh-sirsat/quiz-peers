@@ -3,10 +3,10 @@ import { Image } from "@nextui-org/image";
 import { Chip } from "@nextui-org/chip";
 import { Tooltip } from "@nextui-org/react";
 import QuizCategories from "./QuizCategories";
-import { Quiz } from "../types";
+import { QuizDTO } from "../types";
 
 interface QuizInfoCardProps {
-  quizInfo: Quiz;
+  quizInfo: QuizDTO;
 }
 
 function QuizInfoCard({ quizInfo }: QuizInfoCardProps) {

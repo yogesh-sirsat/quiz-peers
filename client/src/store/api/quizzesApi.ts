@@ -1,130 +1,130 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { Quiz, Question, Option, QuizParams } from "../../types";
+import { QuizDTO, QuestionDTO, OptionDTO, QuizParams, CategoryDTO, QuizQuestion } from "../../types";
 
 const BASE_URL = import.meta.env.VITE_SERVER_API_URL;
 
 export const quizzesApi = createApi({
   reducerPath: "quizzesApi",
   baseQuery: fetchBaseQuery({ baseUrl: BASE_URL }),
-  tagTypes: ["Quiz", "Question", "Option"],
+  tagTypes: ["QuizDTO", "QuestionDTO", "OptionDTO"],
   endpoints: (builder) => ({
-    getAllQuizzes: builder.query<Quiz[], QuizParams | void>({
+    getAllQuizzes: builder.query<QuizDTO[], QuizParams>({
       query: (params = {}) => {
         const { onlyValid = true, includeTesting = false } = params || {};
         return `/quizzes?onlyValid=${onlyValid}&includeTesting=${includeTesting}`;
       },
-      providesTags: ["Quiz"],
+      providesTags: ["QuizDTO"],
     }),
-    getQuizById: builder.query<Quiz, string>({
+    getQuizById: builder.query<QuizDTO, number>({
       query: (quizId) => `/quizzes/${quizId}`,
-      providesTags: (result, error, id) => [{ type: "Quiz", id }],
+      providesTags: (result, error, id) => [{ type: "QuizDTO", id }],
     }),
-    createQuiz: builder.mutation<Quiz, Partial<Quiz>>({
+    createQuiz: builder.mutation<QuizDTO, Partial<QuizDTO>>({
       query: (body) => ({
         url: "/quizzes",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Quiz"],
+      invalidatesTags: ["QuizDTO"],
     }),
-    updateQuiz: builder.mutation<Quiz, { quizId: string } & Partial<Quiz>>({
+    updateQuiz: builder.mutation<QuizDTO, { quizId: number } & Partial<QuizDTO>>({
       query: ({ quizId, ...body }) => ({
         url: `/quizzes/${quizId}`,
         method: "PATCH",
         body,
       }),
-      invalidatesTags: (result, error, { quizId }) => [{ type: "Quiz", id: quizId }, "Quiz"],
+      invalidatesTags: (result, error, { quizId }) => [{ type: "QuizDTO", id: quizId }, "QuizDTO"],
     }),
-    deleteQuiz: builder.mutation<void, { quizId: string; deleteQuestions: boolean }>({
+    deleteQuiz: builder.mutation<void, { quizId: number; deleteQuestions: boolean }>({
       query: ({ quizId, deleteQuestions }) => ({
         url: `/quizzes/${quizId}?deleteQuestions=${deleteQuestions}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Quiz"],
+      invalidatesTags: ["QuizDTO"],
     }),
-    getQuizQuestions: builder.query<Question[], string>({
+    getQuizQuestions: builder.query<QuizQuestion[], number>({
       query: (quizId) => `/quizzes/${quizId}/get-questions`,
-      providesTags: (result, error, quizId) => [{ type: "Question", id: `Quiz-${quizId}` }],
+      providesTags: (result, error, quizId) => [{ type: "QuestionDTO", id: `Quiz-${quizId}` }],
     }),
-    getAllCategories: builder.query<string[], void>({
+    getAllCategories: builder.query<CategoryDTO[], void>({
       query: () => "/quizzes/categories/all",
     }),
 
     // Questions
-    getAllQuestions: builder.query<Question[], void>({
+    getAllQuestions: builder.query<QuestionDTO[], void>({
       query: () => "/questions",
-      providesTags: ["Question"],
+      providesTags: ["QuestionDTO"],
     }),
-    getQuestionById: builder.query<Question, string>({
+    getQuestionById: builder.query<QuestionDTO, number>({
       query: (id) => `/questions/${id}`,
-      providesTags: (result, error, id) => [{ type: "Question", id }],
+      providesTags: (result, error, id) => [{ type: "QuestionDTO", id }],
     }),
-    createQuestion: builder.mutation<Question, Partial<Question>>({
+    createQuestion: builder.mutation<QuestionDTO, Partial<QuestionDTO>>({
       query: (body) => ({
         url: "/questions",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Question", "Quiz"],
+      invalidatesTags: ["QuestionDTO", "QuizDTO"],
     }),
-    updateQuestion: builder.mutation<Question, { questionId: string } & Partial<Question>>({
+    updateQuestion: builder.mutation<QuestionDTO, { questionId: number } & Partial<QuestionDTO>>({
       query: ({ questionId, ...body }) => ({
         url: `/questions/${questionId}`,
         method: "PATCH",
         body,
       }),
-      invalidatesTags: (result, error, { questionId }) => [{ type: "Question", id: questionId }, "Question", "Quiz"],
+      invalidatesTags: (result, error, { questionId }) => [{ type: "QuestionDTO", id: questionId }, "QuestionDTO", "QuizDTO"],
     }),
-    deleteQuestion: builder.mutation<void, string>({
+    deleteQuestion: builder.mutation<void, number>({
       query: (id) => ({
         url: `/questions/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Question", "Quiz"],
+      invalidatesTags: ["QuestionDTO", "QuizDTO"],
     }),
 
     // Options
-    getOptionsByQuestionId: builder.query<Option[], string>({
+    getOptionsByQuestionId: builder.query<OptionDTO[], number>({
       query: (questionId) => `/questions/${questionId}/options`,
-      providesTags: (result, error, questionId) => [{ type: "Option", id: `Q-${questionId}` }],
+      providesTags: (result, error, questionId) => [{ type: "OptionDTO", id: `Q-${questionId}` }],
     }),
-    createOption: builder.mutation<Option, { questionId: string } & Partial<Option>>({
+    createOption: builder.mutation<OptionDTO, { questionId: number } & Partial<OptionDTO>>({
       query: ({ questionId, ...body }) => ({
         url: `/questions/${questionId}/options`,
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { questionId }) => [{ type: "Option", id: `Q-${questionId}` }, "Quiz"],
+      invalidatesTags: (result, error, { questionId }) => [{ type: "OptionDTO", id: `Q-${questionId}` }, "QuizDTO"],
     }),
-    updateOption: builder.mutation<Option, { optionId: string } & Partial<Option>>({
+    updateOption: builder.mutation<OptionDTO, { optionId: number } & Partial<OptionDTO>>({
       query: ({ optionId, ...body }) => ({
         url: `/options/${optionId}`,
         method: "PATCH",
         body,
       }),
-      invalidatesTags: (result, error, { optionId }) => ["Option", "Quiz"],
+      invalidatesTags: (result, error, { optionId }) => ["OptionDTO", "QuizDTO"],
     }),
-    deleteOption: builder.mutation<void, string>({
+    deleteOption: builder.mutation<void, number>({
       query: (optionId) => ({
         url: `/options/${optionId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Option", "Quiz"],
+      invalidatesTags: ["OptionDTO", "QuizDTO"],
     }),
-    setCorrectOption: builder.mutation<void, { questionId: string; optionId: string }>({
+    setCorrectOption: builder.mutation<void, { questionId: number; optionId: number }>({
       query: ({ questionId, optionId }) => ({
         url: `/questions/${questionId}/correct-option`,
         method: "PUT",
         body: { optionId },
       }),
-      invalidatesTags: (result, error, { questionId }) => [{ type: "Question", id: questionId }, "Quiz"],
+      invalidatesTags: (result, error, { questionId }) => [{ type: "QuestionDTO", id: questionId }, "QuizDTO"],
     }),
-    removeQuestionFromQuiz: builder.mutation<void, { quizId: string; questionId: string }>({
+    removeQuestionFromQuiz: builder.mutation<void, { quizId: number; questionId: number }>({
       query: ({ quizId, questionId }) => ({
         url: `/quizzes/${quizId}/questions/${questionId}`,
         method: "DELETE",
       }),
-      invalidatesTags: (result, error, { quizId }) => [{ type: "Question", id: `Quiz-${quizId}` }, "Quiz"],
+      invalidatesTags: (result, error, { quizId }) => [{ type: "QuestionDTO", id: `Quiz-${quizId}` }, "QuizDTO"],
     }),
     uploadMedia: builder.mutation<{ url: string }, FormData>({
       query: (formData) => {

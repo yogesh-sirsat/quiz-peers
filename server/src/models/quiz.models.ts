@@ -1,7 +1,7 @@
 import * as db from "../database/postgres.database.ts";
-import { Quiz, QuizCreateInput, QuizUpdateInput, QuizQuestion, Category } from "../interfaces/quiz.interface.ts";
+import { QuizDTO, QuizCreateInput, QuizUpdateInput, QuizQuestion, CategoryDTO } from "../interfaces/quiz.interface.ts";
 
-export async function getAllQuizzesData(onlyValid = true, includeTesting = false): Promise<Quiz[]> {
+export async function getAllQuizzesData(onlyValid = true, includeTesting = false): Promise<QuizDTO[]> {
   let queryStr = `
       SELECT
         qz.quiz_id,
@@ -56,21 +56,21 @@ export async function getAllQuizzesData(onlyValid = true, includeTesting = false
       GROUP BY
         qz.quiz_id
     `;
-  const result = await db.query<Quiz>(queryStr);
+  const result = await db.query<QuizDTO>(queryStr);
   return result.rows;
 }
 
-export async function createQuizData({ quizName, description, coverImageUrl, status = 'draft' }: QuizCreateInput): Promise<Quiz> {
+export async function createQuizData({ quizName, description, coverImageUrl, status = 'draft' }: QuizCreateInput): Promise<QuizDTO> {
   const queryStr = `
     INSERT INTO quizzes (quiz_name, description, cover_image_url, status)
     VALUES ($1, $2, $3, $4)
     RETURNING *
   `;
-  const result = await db.query<Quiz>(queryStr, [quizName, description, coverImageUrl, status]);
+  const result = await db.query<QuizDTO>(queryStr, [quizName, description, coverImageUrl, status]);
   return result.rows[0];
 }
 
-export async function updateQuizData(quizId: number, { quizName, description, coverImageUrl, status }: QuizUpdateInput): Promise<Quiz> {
+export async function updateQuizData(quizId: number, { quizName, description, coverImageUrl, status }: QuizUpdateInput): Promise<QuizDTO> {
   const queryStr = `
     UPDATE quizzes
     SET quiz_name = COALESCE($1, quiz_name),
@@ -81,7 +81,7 @@ export async function updateQuizData(quizId: number, { quizName, description, co
     WHERE quiz_id = $5
     RETURNING *
   `;
-  const result = await db.query<Quiz>(queryStr, [quizName, description, coverImageUrl, status, quizId]);
+  const result = await db.query<QuizDTO>(queryStr, [quizName, description, coverImageUrl, status, quizId]);
   return result.rows[0];
 }
 
@@ -108,7 +108,7 @@ export async function deleteQuizData(quizId: number, deleteQuestions = false): P
   return (result.rowCount ?? 0) > 0;
 }
 
-export async function getQuizByIdData(quizId: number): Promise<Quiz> {
+export async function getQuizByIdData(quizId: number): Promise<QuizDTO> {
   const queryStr = `
     SELECT
       qz.quiz_id,
@@ -132,7 +132,7 @@ export async function getQuizByIdData(quizId: number): Promise<Quiz> {
     GROUP BY
       qz.quiz_id
   `;
-  const result = await db.query<Quiz>(queryStr, [quizId]);
+  const result = await db.query<QuizDTO>(queryStr, [quizId]);
   return result.rows[0];
 }
 
@@ -141,6 +141,8 @@ export async function getQuizQuestionsForPlay(quizId: number): Promise<QuizQuest
     SELECT
       qq.question_id,
       qq.question_text,
+      qq.category_id,
+      qc.category_name,
       qq.image_url,
       qq.audio_url,
       qq.difficulty,
@@ -148,6 +150,7 @@ export async function getQuizQuestionsForPlay(quizId: number): Promise<QuizQuest
     FROM
       quiz_question_relationships qqr
       JOIN quiz_questions qq ON qqr.question_id = qq.question_id
+      LEFT JOIN quiz_categories qc ON qq.category_id = qc.category_id
       LEFT JOIN correct_options co ON qq.question_id = co.question_id
     WHERE
       qqr.quiz_id = $1
@@ -193,6 +196,8 @@ export async function getQuizQuestionsForPlay(quizId: number): Promise<QuizQuest
   const allQuestions: QuizQuestion[] = questionsResult.rows.map((question: any) => ({
     questionId: question.question_id,
     questionText: question.question_text,
+    categoryId: question.category_id,
+    categoryName: question.category_name,
     imageUrl: question.image_url,
     audioUrl: question.audio_url,
     difficulty: question.difficulty || "Medium",
@@ -231,8 +236,8 @@ export async function updateQuizStats(quizId: number, playerCount: number, sessi
   await db.query(queryStr, [quizId, playerCount, sessionSuccessRate]);
 }
 
-export async function getAllCategoriesData(): Promise<Category[]> {
+export async function getAllCategoriesData(): Promise<CategoryDTO[]> {
   const queryStr = `SELECT * FROM quiz_categories ORDER BY category_name ASC`;
-  const result = await db.query<Category>(queryStr);
+  const result = await db.query<CategoryDTO>(queryStr);
   return result.rows;
 }

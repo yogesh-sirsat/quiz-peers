@@ -4,10 +4,10 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import QuizStatsFooter from "../QuizStatsFooter";
 import QuizCategories from "../QuizCategories";
-import { Quiz } from "../../types";
+import { QuizDTO } from "../../types";
 
 interface QuizModalContentProps {
-  quizData: Quiz;
+  quizData: QuizDTO;
 }
 
 export default function QuizModalContent({ quizData }: QuizModalContentProps) {
