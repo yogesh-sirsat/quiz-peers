@@ -1,9 +1,3 @@
-// Note: In a real-world scenario, you might want to duplicate these constants 
-// or have a shared package to avoid relative imports from server to client,
-// but for this project structure, we will just duplicate the minimal logic here 
-// or fetch them. Since we can't easily import from server in Vite client without 
-// configuration, I will duplicate the lists for client-side generation.
-
 const FICTIONAL_CHARACTERS = [
   "wario", "donkey kong", "link", "samus", "yoshi", "kirby", "fox", "ness", "pikachu", "luigi",
   "captain falcon", "jigglypuff", "peach", "bowser", "mario", "zelda", "Sherlock Holmes", "Dr Watson",
@@ -30,7 +24,7 @@ const COLORS = [
 const PREFIXES = [...ADJECTIVES, ...COLORS];
 const POSTFIXES = [...FICTIONAL_CHARACTERS, ...ANIMAL_NAMES];
 
-export function generateClientSidePlayerName() {
+export function generateClientSidePlayerName(): string {
   const prefix = PREFIXES[Math.floor(Math.random() * PREFIXES.length)];
   const postfix = POSTFIXES[Math.floor(Math.random() * POSTFIXES.length)];
   return `${prefix} ${postfix}`;

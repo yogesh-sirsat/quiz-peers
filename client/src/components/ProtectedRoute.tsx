@@ -1,10 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import supabase from "../utils/supabase";
+import { Session } from "@supabase/supabase-js";
 
-export default function ProtectedRoute({ children }) {
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+interface ProtectedRouteProps {
+  children: ReactNode;
+}
+
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -29,5 +34,5 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/admin/login" />;
   }
 
-  return children;
+  return <>{children}</>;
 }

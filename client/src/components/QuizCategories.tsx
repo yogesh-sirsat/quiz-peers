@@ -1,7 +1,12 @@
 import { Chip } from "@nextui-org/chip";
-import PropTypes from "prop-types";
 
-export default function QuizCategories({ categories, isCard = false, max }) {
+interface QuizCategoriesProps {
+  categories?: string[];
+  isCard?: boolean;
+  max?: number;
+}
+
+export default function QuizCategories({ categories, isCard = false, max }: QuizCategoriesProps) {
   const displayCategories = max ? categories?.slice(0, max) : categories;
 
   return (
@@ -26,9 +31,3 @@ export default function QuizCategories({ categories, isCard = false, max }) {
     </ul>
   );
 }
-
-QuizCategories.propTypes = {
-  categories: PropTypes.array,
-  isCard: PropTypes.bool,
-  max: PropTypes.number,
-};

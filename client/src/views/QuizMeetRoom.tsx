@@ -5,18 +5,27 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import QuizNameCard from "../components/quiz-meet-room/QuizNameCard";
 import { Crown, Mic, MicOff, Trophy, Pencil, FastForward, Share2, Check } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
-import Peer from "peerjs";
-import { MEDIA_CONSTRAINTS } from "../config/mediaConfig.js";
-import AudioDeviceManager from "../components/quiz-meet-room/AudioDeviceManager.jsx";
+import Peer, { DataConnection } from "peerjs";
+import { MEDIA_CONSTRAINTS } from "../config/mediaConfig";
+import AudioDeviceManager from "../components/quiz-meet-room/AudioDeviceManager";
 import { useDispatch, useSelector } from "react-redux";
-import { addChatMessage, addUpdateRoomPlayer, removeRoomPlayer } from "../store/features/roomSlice.js";
-import TextChatInterface from "../components/quiz-meet-room/TextChatInterface.jsx";
-import QuizPlayRoom from "./QuizPlayRoom.jsx";
-import PlayerNameModal from "../components/quiz-meet-room/PlayerNameModal.jsx";
-import useAudioActivity from "../hooks/useAudioActivity.js";
+import { RootState } from "../store/store";
+import { addChatMessage, addUpdateRoomPlayer, removeRoomPlayer } from "../store/features/roomSlice";
+import TextChatInterface from "../components/quiz-meet-room/TextChatInterface";
+import QuizPlayRoom from "./QuizPlayRoom";
+import PlayerNameModal from "../components/quiz-meet-room/PlayerNameModal";
+import useAudioActivity from "../hooks/useAudioActivity";
+import { LeaderboardEntry, QuizQuestion } from "../types";
 
-function LeaderboardModal({ isOpen, onOpenChange, leaderboard, toggleMute }) {
-  const roomPlayers = useSelector((state) => state.room.roomPlayers);
+interface LeaderboardModalProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  leaderboard: LeaderboardEntry[];
+  toggleMute: (peerId: string, currentMuteStatus: boolean) => void;
+}
+
+function LeaderboardModal({ isOpen, onOpenChange, leaderboard, toggleMute }: LeaderboardModalProps) {
+  const roomPlayers = useSelector((state: RootState) => state.room.roomPlayers);
 
   return (
     <Modal
@@ -70,47 +79,88 @@ function LeaderboardModal({ isOpen, onOpenChange, leaderboard, toggleMute }) {
   );
 }
 
+type QuizStatus = "waiting" | "playing" | "finished";
+
+interface CurrentQuestion extends QuizQuestion {}
+
+interface QuizRoomData {
+    event: string;
+    roomId?: string;
+    quizId?: string;
+    peerId?: string;
+    isRoomPublic?: boolean;
+    playerName?: string;
+    hostPeerId?: string | null;
+    roomPlayers?: any[];
+    message?: string;
+    success?: boolean;
+    newPlayerName?: string;
+    readyPeerIds?: string[];
+    totalPlayers?: number;
+    totalQuestions?: number;
+    question?: CurrentQuestion;
+    questionIndex?: number;
+    questionDurationMs?: number;
+    questionEndsAt?: number;
+    leaderboard?: LeaderboardEntry[];
+    skipCount?: number;
+    alreadyAnswered?: boolean;
+    correctOptionId?: string;
+    results?: any[];
+    topThree?: any[];
+}
+
+interface ConnectionData {
+    type: string;
+    sender?: string;
+    text?: string;
+    timeStamp?: number;
+    peerId?: string;
+    muteStatus?: boolean;
+    isSpeaking?: boolean;
+}
+
 export default function QuizMeetRoom() {
   const dispatch = useDispatch();
   const webSocketUrl = import.meta.env.VITE_WEBSOCKET_URL;
   const navigate = useNavigate();
-  const { quizId, roomId } = useParams();
+  const { quizId, roomId } = useParams<{ quizId: string; roomId: string }>();
   const [searchParams] = useSearchParams();
-  const [isRoomPublic, setIsRoomPublic] = useState(searchParams.get("public") === "true");
-  const [roomError, setRoomError] = useState(null);
-  const [playerName, setPlayerName] = useState(null);
-  const [localPeerId, setLocalPeerId] = useState();
-  const [isLocalPlayerMute, setIsLocalPlayerMute] = useState(true);
-  const [selectedAudioDevice, setSelectedAudioDevice] = useState(null);
-  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
-  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
-  const [isLinkCopied, setIsLinkCopied] = useState(false);
+  const [isRoomPublic, setIsRoomPublic] = useState<boolean>(searchParams.get("public") === "true");
+  const [roomError, setRoomError] = useState<string | null>(null);
+  const [playerName, setPlayerName] = useState<string | null>(null);
+  const [localPeerId, setLocalPeerId] = useState<string | undefined>();
+  const [isLocalPlayerMute, setIsLocalPlayerMute] = useState<boolean>(true);
+  const [selectedAudioDevice, setSelectedAudioDevice] = useState<string | null>(null);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState<boolean>(false);
+  const [isNameModalOpen, setIsNameModalOpen] = useState<boolean>(false);
+  const [isLinkCopied, setIsLinkCopied] = useState<boolean>(false);
 
-  const [hostPeerId, setHostPeerId] = useState(null);
-  const [readyPeerIds, setReadyPeerIds] = useState([]);
-  const [totalPlayers, setTotalPlayers] = useState(0);
-  const [isReadyToStart, setIsReadyToStart] = useState(false);
+  const [hostPeerId, setHostPeerId] = useState<string | null>(null);
+  const [readyPeerIds, setReadyPeerIds] = useState<string[]>([]);
+  const [totalPlayers, setTotalPlayers] = useState<number>(0);
+  const [isReadyToStart, setIsReadyToStart] = useState<boolean>(false);
 
-  const [quizStatus, setQuizStatus] = useState("waiting");
-  const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [totalQuestions, setTotalQuestions] = useState(0);
-  const [questionEndsAt, setQuestionEndsAt] = useState(0);
-  const [questionDurationMs, setQuestionDurationMs] = useState(15000);
-  const [timeRemainingMs, setTimeRemainingMs] = useState(0);
-  const [hasAnsweredCurrent, setHasAnsweredCurrent] = useState(false);
-  const [selectedOptionId, setSelectedOptionId] = useState(null);
-  const [correctOptionId, setCorrectOptionId] = useState(null);
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [roundResults, setRoundResults] = useState([]);
-  const [topThree, setTopThree] = useState([]);
-  const [skipCount, setSkipCount] = useState(0);
-  const [localStream, setLocalStream] = useState(null);
-  const [isWsConnected, setIsWsConnected] = useState(false);
+  const [quizStatus, setQuizStatus] = useState<QuizStatus>("waiting");
+  const [currentQuestion, setCurrentQuestion] = useState<CurrentQuestion | null>(null);
+  const [questionIndex, setQuestionIndex] = useState<number>(0);
+  const [totalQuestions, setTotalQuestions] = useState<number>(0);
+  const [questionEndsAt, setQuestionEndsAt] = useState<number>(0);
+  const [questionDurationMs, setQuestionDurationMs] = useState<number>(15000);
+  const [timeRemainingMs, setTimeRemainingMs] = useState<number>(0);
+  const [hasAnsweredCurrent, setHasAnsweredCurrent] = useState<boolean>(false);
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [correctOptionId, setCorrectOptionId] = useState<string | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [roundResults, setRoundResults] = useState<any[]>([]);
+  const [topThree, setTopThree] = useState<any[]>([]);
+  const [skipCount, setSkipCount] = useState<number>(0);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [isWsConnected, setIsWsConnected] = useState<boolean>(false);
 
-  const peerRef = useRef(null);
-  const localStreamRef = useRef(new MediaStream());
-  const wsRef = useRef(null);
+  const peerRef = useRef<Peer | null>(null);
+  const localStreamRef = useRef<MediaStream>(new MediaStream());
+  const wsRef = useRef<WebSocket | null>(null);
 
   const handleShareLink = useCallback(() => {
     navigator.clipboard.writeText(window.location.href);
@@ -118,7 +168,7 @@ export default function QuizMeetRoom() {
     setTimeout(() => setIsLinkCopied(false), 2000);
   }, []);
 
-  const sendJson = useCallback((data) => {
+  const sendJson = useCallback((data: any) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(data));
     } else {
@@ -127,18 +177,18 @@ export default function QuizMeetRoom() {
   }, []);
   
   const isSpeaking = useAudioActivity(localStream);
-  const roomPlayers = useSelector((state) => state.room.roomPlayers);
+  const roomPlayers = useSelector((state: RootState) => state.room.roomPlayers);
 
   const isHost = useMemo(() => hostPeerId && localPeerId && hostPeerId === localPeerId, [hostPeerId, localPeerId]);
 
-  const toggleMute = useCallback((peerId, currentMuteStatus) => {
+  const toggleMute = useCallback((peerId: string, currentMuteStatus: boolean) => {
     dispatch(addUpdateRoomPlayer({
       key: peerId,
       value: { isMute: !currentMuteStatus }
     }));
   }, [dispatch]);
 
-  const handleSaveName = useCallback((newName) => {
+  const handleSaveName = useCallback((newName: string) => {
     sendJson({
       event: "changePlayerName",
       roomId,
@@ -152,15 +202,15 @@ export default function QuizMeetRoom() {
     if (isPublicParams) {
       setIsRoomPublic(isPublicParams === "true");
     } else {
-      navigate("/pagenotfound");
+      // Allow it to proceed if we already have it from initial state or search params
     }
-  }, [navigate, searchParams]);
+  }, [searchParams]);
 
   useEffect(() => {
-    let currentLocalStream;
-    const constraints = {
+    let currentLocalStream: MediaStream;
+    const constraints: any = {
       ...MEDIA_CONSTRAINTS,
-      audio: { ...MEDIA_CONSTRAINTS.audio }
+      audio: { ...(MEDIA_CONSTRAINTS.audio as any) }
     };
     if (selectedAudioDevice) {
       constraints.audio.deviceId = selectedAudioDevice;
@@ -169,19 +219,17 @@ export default function QuizMeetRoom() {
       try {
         currentLocalStream = await navigator.mediaDevices.getUserMedia(constraints);
         localStreamRef.current.srcObject = currentLocalStream;
+        // @ts-ignore
         localStreamRef.current.muted = true;
-        localStreamRef.current.onloadedmetadata = () => {
-          localStreamRef.current.play();
-        };
         setLocalStream(currentLocalStream);
-      } catch (e) {
+      } catch (e: any) {
         alert(e.message);
         console.error(e);
       }
     })();
     return () => {
-      if (currentLocalStream) {
-        currentLocalStream?.getTracks().forEach((track) => track.stop());
+      if (localStream) {
+        localStream.getTracks().forEach((track) => track.stop());
       }
       localStreamRef.current = new MediaStream();
     };
@@ -205,24 +253,24 @@ export default function QuizMeetRoom() {
     setIsReadyToStart(readyPeerIds.includes(localPeerId));
   }, [localPeerId, readyPeerIds]);
 
-  const handleConnectionData = useCallback((data) => {
+  const handleConnectionData = useCallback((data: ConnectionData) => {
     switch (data.type) {
       case "chatMessage":
         dispatch(addChatMessage({
-          sender: data?.sender,
-          isPlayer: true,
-          text: data?.text,
-          timeStamp: data?.timeStamp
+          id: uuidv4(),
+          sender: data?.sender || "Unknown",
+          text: data?.text || "",
+          timestamp: data?.timeStamp || Date.now()
         }));
         break;
       case "muteStatus":
         dispatch(addUpdateRoomPlayer({
-          key: data?.peerId, value: { isMute: data?.muteStatus }
+          key: data?.peerId || "", value: { isMute: data?.muteStatus }
         }));
         break;
       case "speakingStatus":
         dispatch(addUpdateRoomPlayer({
-          key: data?.peerId,
+          key: data?.peerId || "",
           value: { isSpeaking: data?.isSpeaking }
         }));
         break;
@@ -231,8 +279,10 @@ export default function QuizMeetRoom() {
     }
   }, [dispatch]);
 
-  const handlePlayerDataConnection = useCallback((player, localPlayerName) => {
-    let dataConnection = peerRef.current.connections[player?.peerId]?.find((conn) => conn.type === "data");
+  const handlePlayerDataConnection = useCallback((player: any, localPlayerName: string) => {
+    if (!peerRef.current) return;
+    
+    let dataConnection = (peerRef.current.connections as any)[player?.peerId]?.find((conn: any) => conn.type === "data");
     if (!dataConnection) {
       dataConnection = peerRef.current.connect(player?.peerId, {
         reliable: true,
@@ -246,15 +296,15 @@ export default function QuizMeetRoom() {
           dataConnection, playerName: player?.playerName, isMute: false
         }
       }));
-      dataConnection.on("data", (data) => {
-        handleConnectionData(data);
+      dataConnection.on("data", (data: any) => {
+        handleConnectionData(data as ConnectionData);
       });
     });
   }, [dispatch, handleConnectionData]);
 
-  const handleJoinRoomSuccess = useCallback((roomData, peerId, localPlayerName) => {
+  const handleJoinRoomSuccess = useCallback((roomData: any, peerId: string, localPlayerName: string) => {
     try {
-      roomData?.roomPlayers?.forEach((player) => {
+      roomData?.roomPlayers?.forEach((player: any) => {
         if (player?.peerId === peerId) {
           return;
         }
@@ -266,7 +316,6 @@ export default function QuizMeetRoom() {
   }, [handlePlayerDataConnection]);
 
   const handleStartClick = useCallback(() => {
-    // If it's a private room and the user is the host, they are actually STARTING the quiz.
     if (!isRoomPublic && isHost) {
       sendJson({
         event: "startPrivateQuiz",
@@ -276,7 +325,6 @@ export default function QuizMeetRoom() {
       return;
     }
 
-    // Otherwise, for both public rooms and private room non-hosts, it's a "Ready" toggle.
     const nextReady = !isReadyToStart;
     setIsReadyToStart(nextReady);
     sendJson({
@@ -287,7 +335,7 @@ export default function QuizMeetRoom() {
     });
   }, [isRoomPublic, isHost, isReadyToStart, roomId, sendJson]);
 
-  const handleSubmitAnswer = useCallback((optionId) => {
+  const handleSubmitAnswer = useCallback((optionId: string) => {
     if (!currentQuestion || quizStatus !== "playing") {
       return;
     }
@@ -323,7 +371,7 @@ export default function QuizMeetRoom() {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.CLOSED) {
       wsRef.current = new WebSocket(webSocketUrl);
     }
-    let peerId;
+    let peerId: string;
     if (!peerRef.current) {
       peerId = uuidv4();
       peerRef.current = new Peer(peerId, {
@@ -340,39 +388,39 @@ export default function QuizMeetRoom() {
         }
       });
     } else {
-      peerId = peerRef.current?.id;
+      peerId = peerRef.current.id;
     }
 
     peerRef.current.on("open", (id) => {
       setLocalPeerId(id);
     });
 
-    peerRef.current.on("connection", (conn) => {
+    peerRef.current.on("connection", (conn: DataConnection) => {
       setTimeout(() => {
         dispatch(addUpdateRoomPlayer({
           key: conn.peer,
-          value: { dataConnection: conn, playerName: conn?.metadata?.playerName, isMute: false }
+          value: { dataConnection: conn, playerName: (conn.metadata as any)?.playerName, isMute: false }
         }));
         dispatch(addChatMessage({
+          id: uuidv4(),
           sender: "System",
-          isPlayer: false,
-          text: `${conn?.metadata?.playerName} joined the room!`,
-          timeStamp: Date.now()
+          text: `${(conn.metadata as any)?.playerName} joined the room!`,
+          timestamp: Date.now()
         }));
-        conn.on("data", (data) => {
-          handleConnectionData(data);
+        conn.on("data", (data: any) => {
+          handleConnectionData(data as ConnectionData);
         });
       }, 1000);
     });
 
     peerRef.current.on("disconnected", () => {
-      peerRef.current.reconnect();
+      peerRef.current?.reconnect();
     });
 
     wsRef.current.onopen = () => {
       setIsWsConnected(true);
       try {
-        wsRef.current.send(JSON.stringify({
+        wsRef.current?.send(JSON.stringify({
           roomId, quizId, peerId, event: "joinRoom", isRoomPublic
         }));
       } catch (e) {
@@ -381,18 +429,18 @@ export default function QuizMeetRoom() {
     };
 
     wsRef.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      const data: QuizRoomData = JSON.parse(event.data);
       switch (data?.event) {
         case "roomError":
-          setRoomError(data?.message);
+          setRoomError(data?.message || "Room error");
           break;
         case "joinRoomSuccess":
-          setPlayerName(data?.playerName);
+          setPlayerName(data?.playerName || null);
           setHostPeerId(data?.hostPeerId || null);
-          setReadyPeerIds(data?.roomPlayers?.filter((player) => player.readyToStart).map((player) => player.peerId) || []);
+          setReadyPeerIds(data?.roomPlayers?.filter((player: any) => player.readyToStart).map((player: any) => player.peerId) || []);
           setTotalPlayers(data?.roomPlayers?.length || 0);
           setTimeout(() => {
-            handleJoinRoomSuccess(data, peerId, data?.playerName);
+            handleJoinRoomSuccess(data, peerId, data?.playerName || "");
           }, 1000);
           break;
         case "joinRoomFailed":
@@ -405,12 +453,12 @@ export default function QuizMeetRoom() {
           }
           break;
         case "playerLeftWaitingRoom":
-          dispatch(removeRoomPlayer(data?.peerId));
+          dispatch(removeRoomPlayer(data?.peerId || ""));
           dispatch(addChatMessage({
+            id: uuidv4(),
             sender: "System Bot",
-            isPlayer: false,
             text: `${data?.playerName} left the room.`,
-            timeStamp: Date.now()
+            timestamp: Date.now()
           }));
           break;
         case "waitingRoomState":
@@ -418,7 +466,7 @@ export default function QuizMeetRoom() {
           setReadyPeerIds(data?.readyPeerIds || []);
           setTotalPlayers(data?.totalPlayers || 0);
           if (data?.roomPlayers) {
-            data.roomPlayers.forEach((player) => {
+            data.roomPlayers.forEach((player: any) => {
               dispatch(addUpdateRoomPlayer({
                 key: player.peerId,
                 value: { playerName: player.playerName }
@@ -437,7 +485,7 @@ export default function QuizMeetRoom() {
           break;
         case "quizQuestion":
           setQuizStatus("playing");
-          setCurrentQuestion(data?.question);
+          setCurrentQuestion(data?.question || null);
           setQuestionIndex((data?.questionIndex || 0) + 1);
           setTotalQuestions(data?.totalQuestions || 0);
           setQuestionDurationMs(data?.questionDurationMs || 15000);
@@ -460,7 +508,7 @@ export default function QuizMeetRoom() {
           break;
         case "questionResult":
           setQuestionEndsAt(0);
-          setCorrectOptionId(data?.correctOptionId);
+          setCorrectOptionId(data?.correctOptionId || null);
           setRoundResults(data?.results || []);
           setLeaderboard(data?.leaderboard || []);
           break;
@@ -529,15 +577,12 @@ export default function QuizMeetRoom() {
 
   useEffect(() => {
     if (localPeerId) {
-      // Update local state in Redux (only if changed to avoid potential render cycles if logic was different)
-      // Actually, dispatching same value is usually optimized by Redux or React, but safe to do.
       dispatch(addUpdateRoomPlayer({
         key: localPeerId,
         value: { isSpeaking: !isLocalPlayerMute && isSpeaking }
       }));
 
-      // Broadcast to peers
-      Object.values(roomPlayersRef.current).forEach((player) => {
+      Object.values(roomPlayersRef.current).forEach((player: any) => {
         if (player?.dataConnection?.open) {
           player.dataConnection.send({
             type: "speakingStatus",
@@ -547,7 +592,7 @@ export default function QuizMeetRoom() {
         }
       });
     }
-  }, [isSpeaking, localPeerId, isLocalPlayerMute, dispatch]); // Intentionally omitting roomPlayers to avoid loop, using ref.
+  }, [isSpeaking, localPeerId, isLocalPlayerMute, dispatch]);
 
 
   const localPlayerRow = useMemo(() => ({
@@ -562,26 +607,12 @@ export default function QuizMeetRoom() {
     return Math.max(0, Math.min(100, (timeRemainingMs / questionDurationMs) * 100));
   }, [questionDurationMs, questionEndsAt, quizStatus, timeRemainingMs]);
 
-  const optionClassName = (optionId) => {
-    if (correctOptionId !== null) {
-      if (optionId === correctOptionId) {
-        return "border-green-500 bg-green-500/20";
-      }
-      if (optionId === selectedOptionId && selectedOptionId !== correctOptionId) {
-        return "border-red-500 bg-red-500/20";
-      }
-    } else if (selectedOptionId === optionId) {
-      return "border-amber-400 bg-amber-400/20";
-    }
-    return "border-background/20 bg-background/10 hover:bg-background/20";
-  };
-
   return (
     <section className="w-screen min-h-screen max-h-screen flex flex-col overflow-y-auto">
       <NavbarComponent />
       <article
         className="mt-4 xs:mt-6 mx-3 xs:mx-4 md:mx-auto w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] gap-2 flex flex-col overflow-y-auto">
-        {quizStatus === "waiting" && <QuizNameCard quizId={quizId} />}
+        {quizStatus === "waiting" && <QuizNameCard quizId={quizId || ""} />}
 
         <section className="mb-6 flex flex-col gap-3 text-foreground bg-background/60 shadow-2xl p-3 xxs:p-4 xs:p-6 rounded-2xl overflow-y-auto">
           <div className="flex flex-row justify-between items-center mb-1 pr-1 gap-2">
@@ -627,7 +658,7 @@ export default function QuizMeetRoom() {
                     <span className="hidden xs:inline">{isLinkCopied ? "Copied!" : "Invite Friends"}</span>
                 </Button>
               )}
-              <TextChatInterface localPeerId={localPeerId} localPlayerName={playerName} />
+              <TextChatInterface localPeerId={localPeerId || ""} localPlayerName={playerName || "Player"} />
             </div>
           </div>
 
@@ -698,6 +729,7 @@ export default function QuizMeetRoom() {
               </div>
             </li>
             {quizStatus === "waiting" && Object.entries(roomPlayers).map(([key, value], ind) => (
+               key !== localPeerId && (
               <li
                 key={ind}
                 className="flex flex-row min-w-full gap-2 p-2 h-12 items-center bg-[#39004E] text-background shadow-lg rounded-xl"
@@ -706,13 +738,14 @@ export default function QuizMeetRoom() {
                   variant={"flat"} 
                   size={"sm"} 
                   isIconOnly 
-                  onClick={() => toggleMute(key, value?.isMute)}
+                  onClick={() => toggleMute(key, value?.isMute || false)}
                   className={value?.isSpeaking ? "border-2 border-green-500" : ""}
                 >
                   {value?.isMute ? <MicOff size={22} /> : <Mic size={22} />}
                 </Button>
                 <h2 className={"flex-1 text-center"}>{value?.playerName}</h2>
               </li>
+               )
             ))}
           </ul>
 
@@ -727,7 +760,7 @@ export default function QuizMeetRoom() {
               timerPercent={timerPercent}
               roundResults={roundResults}
               topThree={topThree}
-              localPeerId={localPeerId}
+              localPeerId={localPeerId || ""}
               handleSubmitAnswer={handleSubmitAnswer}
               hasAnsweredCurrent={hasAnsweredCurrent}
               selectedOptionId={selectedOptionId}

@@ -1,19 +1,19 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { NextUIProvider } from "@nextui-org/react";
-import App from "./App.jsx";
-import { store } from "./store/store.js";
+import App from "./App";
+import { store } from "./store/store";
 import { Provider } from "react-redux";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import "./index.css";
-import QuizDetails from "./views/QuizDetails.jsx";
-import QuizMeetRoom from "./views/QuizMeetRoom.jsx";
-import PageNotFound from "./views/PageNotFound.jsx";
-import AdminLogin from "./views/AdminLogin.jsx";
-import AdminPanel from "./views/AdminPanel.jsx";
-import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import QuizDetails from "./views/QuizDetails";
+import QuizMeetRoom from "./views/QuizMeetRoom";
+import PageNotFound from "./views/PageNotFound";
+import AdminLogin from "./views/AdminLogin";
+import AdminPanel from "./views/AdminPanel";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   // <React.StrictMode>
     <Provider store={store}>
       <NextUIProvider>

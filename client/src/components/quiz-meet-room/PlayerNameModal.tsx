@@ -1,9 +1,16 @@
 import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@nextui-org/react";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { generateClientSidePlayerName } from "../../utils/playerUtils.js";
+import { generateClientSidePlayerName } from "../../utils/playerUtils";
 
-export default function PlayerNameModal({ isOpen, onOpenChange, currentName, onSave }) {
+interface PlayerNameModalProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  currentName: string | null;
+  onSave: (name: string) => void;
+}
+
+export default function PlayerNameModal({ isOpen, onOpenChange, currentName, onSave }: PlayerNameModalProps) {
   const [name, setName] = useState(currentName || "");
 
   useEffect(() => {

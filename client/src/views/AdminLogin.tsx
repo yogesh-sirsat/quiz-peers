@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, FormEvent } from "react";
 import { Card, Input, Button, Spacer, CardHeader, CardBody, Divider } from "@nextui-org/react";
 import supabase from "../utils/supabase";
 import { useNavigate } from "react-router-dom";
@@ -6,25 +6,25 @@ import { Lock } from "lucide-react";
 import NavbarComponent from "../components/ui/Navbar";
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      if (error) throw error;
+      if (signInError) throw signInError;
       navigate("/admin");
-    } catch (error) {
-      setError(error.message);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setLoading(false);
     }

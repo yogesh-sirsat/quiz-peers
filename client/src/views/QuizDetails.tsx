@@ -13,38 +13,40 @@ import QuizStatsFooter from "../components/QuizStatsFooter";
 import QuizCategories from "../components/QuizCategories";
 
 export default function QuizDetails() {
-  const { quizId } = useParams();
+  const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
   dayjs.extend(relativeTime);
   // Using a query hook automatically fetches data and returns query values
-  const { data, error, isLoading } = useGetQuizByIdQuery(quizId);
+  const { data, error, isLoading } = useGetQuizByIdQuery(quizId || "");
   const [triggerPublicRoomId, { isLoading: isLoadingPublicRoomId }] = useLazyGetPublicRoomIdQuery();
   const [triggerPrivateRoomId, { isLoading: isLoadingPrivateRoomId }] = useLazyGetIdForPrivateRoomQuery();
 
   const handleJoinPublic = async () => {
+    if (!quizId) return;
     try {
-      const response = await triggerPublicRoomId(quizId);
+      const response: any = await triggerPublicRoomId(quizId);
       if (response.isError) {
         throw new Error(response.error?.data?.message);
       }
       if (response.data) {
         navigate(`/quiz/${quizId}/${response.data.roomId}?public=true`);
       }
-    } catch (error) {
+    } catch (error: any) {
       alert(error.message);
     }
   };
 
   const handleCreatePrivate = async () => {
+    if (!quizId) return;
     try {
-      const response = await triggerPrivateRoomId(quizId);
+      const response: any = await triggerPrivateRoomId(quizId);
       if (response.isError) {
         throw new Error(response.error?.data?.message);
       }
       if (response.data) {
         navigate(`/quiz/${quizId}/${response.data.roomId}?public=false`);
       }
-    } catch (error) {
+    } catch (error: any) {
       alert(error.message);
     }
   };
@@ -77,8 +79,8 @@ export default function QuizDetails() {
               <QuizStatsFooter
                 {...{
                   successRate: data?.success_rate,
-                  contestantsCount: data?.contestants_count,
-                  questionsCount: data?.questions_count
+                  contestantsCount: data?.contestants_count || 0,
+                  questionsCount: data?.questions_count || 0
                 }}
               />
               <Divider className="my-2 md:my-4" />

@@ -1,8 +1,13 @@
 import { Card, CardBody, CardFooter, CardHeader } from "@nextui-org/react";
-import PropTypes from "prop-types";
+import { ChatMessage } from "../../types";
 
-export default function TextMessageCard({ message, showName = true }) {
-  const timeString = new Date(message?.timeStamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+interface TextMessageCardProps {
+  message: ChatMessage;
+  showName?: boolean;
+}
+
+export default function TextMessageCard({ message, showName = true }: TextMessageCardProps) {
+  const timeString = new Date(message?.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
   return (
     <Card 
@@ -29,8 +34,3 @@ export default function TextMessageCard({ message, showName = true }) {
     </Card>
   );
 }
-
-TextMessageCard.propTypes = {
-  message: PropTypes.object,
-  showName: PropTypes.bool
-};

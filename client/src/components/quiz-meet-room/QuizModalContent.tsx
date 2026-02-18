@@ -1,12 +1,16 @@
 import { ModalBody, ModalContent, ModalHeader } from "@nextui-org/modal";
 import { Image } from "@nextui-org/image";
-import PropTypes from "prop-types";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import QuizStatsFooter from "../QuizStatsFooter";
 import QuizCategories from "../QuizCategories";
+import { Quiz } from "../../types";
 
-export default function QuizModalContent({ quizData }) {
+interface QuizModalContentProps {
+  quizData: Quiz;
+}
+
+export default function QuizModalContent({ quizData }: QuizModalContentProps) {
   dayjs.extend(relativeTime);
 
   return (
@@ -31,8 +35,8 @@ export default function QuizModalContent({ quizData }) {
           <QuizStatsFooter
             {...{
               successRate: quizData?.success_rate,
-              contestantsCount: quizData?.contestants_count,
-              questionsCount: quizData?.questions_count,
+              contestantsCount: quizData?.contestants_count || 0,
+              questionsCount: quizData?.questions_count || 0,
             }}
           />
         </div>
@@ -40,7 +44,3 @@ export default function QuizModalContent({ quizData }) {
     </ModalContent>
   );
 }
-
-QuizModalContent.propTypes = {
-  quizData: PropTypes.object,
-};

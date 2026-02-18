@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@nextui-org/react";
 import { useNavigate } from "react-router-dom";
-import PropTypes from "prop-types";
 
-export default function NavbarComponent({ isAdmin = false }) {
+interface NavbarComponentProps {
+  isAdmin?: boolean;
+}
+
+export default function NavbarComponent({ isAdmin = false }: NavbarComponentProps) {
   const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isNavbarBlurred, setIsNavbarBlurred] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [isNavbarBlurred, setIsNavbarBlurred] = useState<boolean>(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,6 +21,7 @@ export default function NavbarComponent({ isAdmin = false }) {
     };
     handleScroll();
     window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
@@ -32,16 +36,6 @@ export default function NavbarComponent({ isAdmin = false }) {
       id="navbar"
     >
       <NavbarBrand>
-        {/* <Avatar
-          isBordered
-          as="button"
-          className="transition-transform"
-          color="secondary"
-          name="Jason Hughes"
-          size="md"
-          radius="lg"
-          src="https://i.pravatar.cc/150?u=a04258114e29026302d"
-        /> */}
         <Link
           className="cursor-pointer"
           color={isAdmin ? "secondary" : "foreground"}
@@ -61,20 +55,6 @@ export default function NavbarComponent({ isAdmin = false }) {
           </h3>
         </NavbarItem>
       </NavbarContent>
-
-     
-      
-     
     </Navbar>
-     
   );
-     
 }
-     
-
-     
-NavbarComponent.propTypes = {
-     
-  isAdmin: PropTypes.bool
-     
-};

@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 
-export default function useAudioActivity(stream, threshold = -50) {
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const sourceRef = useRef(null);
-  const animationFrameRef = useRef(null);
+declare global {
+  interface Window {
+    webkitAudioContext: typeof AudioContext;
+  }
+}
+
+export default function useAudioActivity(stream: MediaStream | null, threshold: number = -50): boolean {
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!stream || !stream.active) {
@@ -14,19 +20,23 @@ export default function useAudioActivity(stream, threshold = -50) {
     }
 
     // Initialize AudioContext
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
 
-    audioContextRef.current = new AudioContext();
-    analyserRef.current = audioContextRef.current.createAnalyser();
-    analyserRef.current.fftSize = 512;
-    analyserRef.current.smoothingTimeConstant = 0.4;
+    const audioContext = new AudioContextClass();
+    audioContextRef.current = audioContext;
+    
+    const analyser = audioContext.createAnalyser();
+    analyserRef.current = analyser;
+    analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = 0.4;
 
     try {
-      sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
-      sourceRef.current.connect(analyserRef.current);
+      const source = audioContext.createMediaStreamSource(stream);
+      sourceRef.current = source;
+      source.connect(analyser);
 
-      const bufferLength = analyserRef.current.frequencyBinCount;
+      const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
 
       const checkAudio = () => {
@@ -43,7 +53,6 @@ export default function useAudioActivity(stream, threshold = -50) {
         
         // Convert to dB (approximate)
         // dB = 20 * log10(rms / 255)
-        // If rms is 0, value is -Infinity.
         
         const db = rms > 0 ? 20 * Math.log10(rms / 255) : -100;
 
@@ -58,7 +67,7 @@ export default function useAudioActivity(stream, threshold = -50) {
     }
 
     return () => {
-      if (animationFrameRef.current) {
+      if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {

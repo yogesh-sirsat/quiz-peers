@@ -617,10 +617,10 @@ export function isRoomIdInUse(roomId: string): boolean {
 }
 
 export function getValidGeneratedRoomId(isPublic: boolean = true, quizId: any = null): string {
-  // Try 1 Million times to find a room id that is not in use.
+  // Try 1 lackh times to find a room id that is not in use.
   let tries = 0;
-  const million = 1000000;
-  while (tries < million) {
+  const lackh = 100000;
+  while (tries < lackh) {
     const roomId = generateRandomRoomId();
     if (!isRoomIdInUse(roomId)) {
       const roomState = createWaitingRoomState(isPublic);
