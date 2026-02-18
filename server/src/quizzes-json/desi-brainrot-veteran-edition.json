@@ -1,0 +1,117 @@
+{
+  "quizName": "Desi Internet Survivors: Hard Mode",
+  "description": "If you don't know what 'Moye Moye' means or why '7' is a religion, scroll away. This is strictly for those deep in Indian pop culture, IPL lore, and peak Bengaluru brainrot. Non-Indians will struggle to survive here.",
+  "coverImageUrl": "https://example.com/fun-cover.jpg",
+  "questions": [
+    {
+      "questionText": "In the legendary 'Melody Khao Khud Jaan Jao' lore, the question remains unsolved. But in 2019 IPL, when Dhoni walked onto the pitch to fight the umpire, what was the specific reason?",
+      "difficulty": "Hard",
+      "categoryId": 17,
+      "options": [
+        { "optionText": "A Waist-High No-Ball wasn't given", "isCorrect": true },
+        { "optionText": "Jadeja ran himself out again" },
+        { "optionText": "The strategic timeout was too long" },
+        { "optionText": "Raina ordered the wrong biryani" }
+      ]
+    },
+    {
+      "questionText": "In the cinematic masterpiece 'Suryavansham', which channel is legally married to this movie and plays it every Sunday?",
+      "difficulty": "Easy",
+      "categoryId": 12,
+      "options": [
+        { "optionText": "Sony MAX", "isCorrect": true },
+        { "optionText": "Star Gold" },
+        { "optionText": "Zee Cinema" },
+        { "optionText": "Cartoon Network" }
+      ]
+    },
+    {
+      "questionText": "A Bengaluru Tech Bro on a first date asks you about your 'runway'. What is he referring to?",
+      "difficulty": "Medium",
+      "categoryId": 15,
+      "options": [
+        { "optionText": "How long your startup survives before bankruptcy", "isCorrect": true },
+        { "optionText": "Your walking style" },
+        { "optionText": "Your flight plans" },
+        { "optionText": "The length of your driveway" }
+      ]
+    },
+    {
+      "questionText": "In the viral 'Just looking like a wow' reel, the lady compares her yellow outfit to a specific fruit-based dessert. What color did she call it?",
+      "difficulty": "Medium",
+      "categoryId": 9,
+      "options": [
+        { "optionText": "Laddu Peela Colour", "isCorrect": true },
+        { "optionText": "Mango Shake Yellow" },
+        { "optionText": "Haldee Yellow" },
+        { "optionText": "Dhokla Neon" }
+      ]
+    },
+    {
+      "questionText": "In the Hindi dub of 'Doraemon', Nobita cries to Doraemon exactly 437 times a day. But what is the literal translation of Gian's singing capability?",
+      "difficulty": "Medium",
+      "categoryId": 1,
+      "options": [
+        { "optionText": "Phataa Baans (Broken Bamboo)", "isCorrect": true },
+        { "optionText": "Besura King" },
+        { "optionText": "Toota Speaker" },
+        { "optionText": "Indian Idol Reject" }
+      ]
+    },
+    {
+      "questionText": "When Indian gamers say 'Patt se Headshot', which specific streamer's soul is possessing them?",
+      "difficulty": "Easy",
+      "categoryId": 6,
+      "options": [
+        { "optionText": "Dynamo Gaming", "isCorrect": true },
+        { "optionText": "Mortal" },
+        { "optionText": "CarryMinati" },
+        { "optionText": "Total Gaming" }
+      ]
+    },
+    {
+      "questionText": "In Shark Tank India, if Namita Thapar passes on a deal immediately, what is her trademark excuse?",
+      "difficulty": "Easy",
+      "categoryId": 14,
+      "options": [
+        { "optionText": "Isme meri expertise nahi hai", "isCorrect": true },
+        { "optionText": "I am out, but I wish you the best" },
+        { "optionText": "This is a pre-revenue tragedy" },
+        { "optionText": "My husband won't allow this" }
+      ]
+    },
+    {
+      "questionText": "Identify the chaotic energy: In 'Hera Pheri', what is the name of the circus company Baburao accidentally calls thinking it's the kidnapper?",
+      "difficulty": "Hard",
+      "categoryId": 12,
+      "options": [
+        { "optionText": "Star Fisheries", "isCorrect": true },
+        { "optionText": "Great Bombay Circus" },
+        { "optionText": "Laxmi Chit Fund" },
+        { "optionText": "Tewari Seth Circus" }
+      ]
+    },
+    {
+      "questionText": "David Warner (The Australian Cricketer) is famous in India not for cricket, but for making reels on the songs of which South Indian actor?",
+      "difficulty": "Medium",
+      "categoryId": 17,
+      "options": [
+        { "optionText": "Allu Arjun", "isCorrect": true },
+        { "optionText": "Rajnikanth" },
+        { "optionText": "Prabhas" },
+        { "optionText": "Vijay Thalapathy" }
+      ]
+    },
+    {
+      "questionText": "In the viral 'Binod' meme from Panchayat, where exactly was the name 'Binod' written?",
+      "difficulty": "Hard",
+      "categoryId": 9,
+      "options": [
+        { "optionText": "In the comment section of a YouTube video", "isCorrect": true },
+        { "optionText": "On the Panchayat office wall" },
+        { "optionText": "On a water tank" },
+        { "optionText": "On the Pradhan Ji's car" }
+      ]
+    }
+  ]
+}
