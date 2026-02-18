@@ -40,7 +40,7 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.send("Hello World!");
 });
 
@@ -51,7 +51,7 @@ app.use("/api/questions", questionsRoutes);
 app.use("/api/options", optionsRoutes);
 app.use("/api/media", mediaRoutes);
 
-app.use((req, res) => {
+app.use((_req, res) => {
   res.status(404).send("Page not found");
 });
 

@@ -20,7 +20,7 @@ export function getGeneratePlayerName(room: WaitingRoom): string {
   return nanoid();
 }
 
-export function handleChangePlayerName(ws: ExtendedWebSocket, data: any): void {
+export function handleChangePlayerName(_ws: ExtendedWebSocket, _data: any): void {
   // This logic seems redundant with the one in rooms.websocket.ts, but let's type it correctly
   // In a real refactor, one of these should be removed.
 }

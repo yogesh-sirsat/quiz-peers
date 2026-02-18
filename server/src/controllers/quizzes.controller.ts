@@ -76,7 +76,7 @@ export async function getQuizQuestions(req: Request, res: Response, next: NextFu
   }
 }
 
-export async function getAllCategories(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getAllCategories(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const data = await getAllCategoriesData();
     res.send(data);

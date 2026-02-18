@@ -100,7 +100,7 @@ async function addQuestions() {
 
     console.log('✨ Questions added successfully!');
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Failed to add questions:');
     if (error.response) {
       console.error(`  Status: ${error.response.status}`);
