@@ -1,11 +1,16 @@
 import { Chip } from "@nextui-org/chip";
-import PropTypes from "prop-types";
+
+interface QuizStatsFooterProps {
+  successRate?: string | number;
+  contestantsCount: string | number;
+  questionsCount: string | number;
+}
 
 export default function QuizStatsFooter({
   successRate,
   contestantsCount,
   questionsCount,
-}) {
+}: QuizStatsFooterProps) {
   return (
     <div className="flex flex-wrap gap-1">
       {successRate ? (
@@ -19,7 +24,7 @@ export default function QuizStatsFooter({
           size="sm"
           variant="flat"
         >
-          {Math.round(successRate)}% SUCCESS RATE
+          {Math.round(Number(successRate))}% SUCCESS RATE
         </Chip>
       ) : null}
       <Chip
@@ -32,7 +37,7 @@ export default function QuizStatsFooter({
         size="sm"
         variant="flat"
       >
-        {Math.round(contestantsCount)} TIMES PLAYED
+        {Math.round(Number(contestantsCount))} TIMES PLAYED
       </Chip>
       <Chip
         className="min-w-4 min-h-4"
@@ -44,14 +49,8 @@ export default function QuizStatsFooter({
         size="sm"
         variant="flat"
       >
-        {Math.round(questionsCount)} TOTAL QUESTIONS
+        {Math.round(Number(questionsCount))} TOTAL QUESTIONS
       </Chip>
     </div>
   );
 }
-
-QuizStatsFooter.propTypes = {
-  successRate: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  contestantsCount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  questionsCount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-};

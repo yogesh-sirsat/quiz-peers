@@ -2,9 +2,12 @@ import { Button } from "@nextui-org/button";
 import { Modal, useDisclosure } from "@nextui-org/modal";
 import QuizModalContent from "./QuizModalContent";
 import { useGetQuizByIdQuery } from "../../store/api/quizzesApi";
-import PropTypes from "prop-types";
 
-export default function QuizNameCard({ quizId }) {
+interface QuizNameCardProps {
+  quizId: string;
+}
+
+export default function QuizNameCard({ quizId }: QuizNameCardProps) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const {
     data: quizData,
@@ -15,7 +18,7 @@ export default function QuizNameCard({ quizId }) {
   return (
     <>
       {quizError ? (
-        <p>{quizError.message}</p>
+        <p>{(quizError as any).message || "An error occurred"}</p>
       ) : quizLoading ? (
         <p>Loading...</p>
       ) : quizData ? (
@@ -23,7 +26,7 @@ export default function QuizNameCard({ quizId }) {
           <h1 className="text-xl xs:text-2xl sm:text-3xl font-semibold">
             {quizData?.quiz_name}
           </h1>
-          <p className="text-sm">
+          <div className="text-sm">
             <span>{quizData?.description} </span>
             <Button
               size="sm"
@@ -35,7 +38,7 @@ export default function QuizNameCard({ quizId }) {
             >
               View Quiz...
             </Button>
-          </p>
+          </div>
           <Modal
             size={"xl"}
             isOpen={isOpen}
@@ -53,7 +56,3 @@ export default function QuizNameCard({ quizId }) {
     </>
   );
 }
-
-QuizNameCard.propTypes = {
-  quizId: PropTypes.string,
-};

@@ -10,33 +10,40 @@ import {
 } from "@nextui-org/react";
 import { MessageSquareText, SendHorizontal } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import TextMessageCard from "./TextMessageCard.jsx";
-import { useMemo, useState } from "react";
-import PropTypes from "prop-types";
-import { addChatMessage } from "../../store/features/roomSlice.js";
+import TextMessageCard from "./TextMessageCard";
+import { useMemo, useState, KeyboardEvent } from "react";
+import { addChatMessage } from "../../store/features/roomSlice";
+import { RootState } from "../../store/store";
+import { v4 as uuidv4 } from "uuid";
 
-export default function TextChatInterface({ localPeerId, localPlayerName }) {
+interface TextChatInterfaceProps {
+  localPeerId: string;
+  localPlayerName: string;
+}
+
+export default function TextChatInterface({ localPeerId, localPlayerName }: TextChatInterfaceProps) {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const chatMessages = useSelector((state) => state.room.chatMessages);
-  const roomPlayers = useSelector((state) => state.room.roomPlayers);
+  const chatMessages = useSelector((state: RootState) => state.room.chatMessages);
+  const roomPlayers = useSelector((state: RootState) => state.room.roomPlayers);
   const [currentText, setCurrentText] = useState("");
 
-  const handleSendMessage = (text) => {
+  const handleSendMessage = (text: string) => {
     if (!text || !text.trim()) return;
 
     try {
       const messagePayload = {
+        id: uuidv4(),
         sender: localPlayerName,
         peerId: localPeerId,
         text: text,
         isPlayer: true,
-        timeStamp: Date.now()
+        timestamp: Date.now()
       };
 
       dispatch(addChatMessage(messagePayload));
 
-      Object.values(roomPlayers).forEach((player) => {
+      Object.values(roomPlayers).forEach((player: any) => {
         if (player?.dataConnection?.open) {
           player.dataConnection.send({
             type: "chatMessage",
@@ -49,12 +56,19 @@ export default function TextChatInterface({ localPeerId, localPlayerName }) {
       console.error("Error sending message:", error);
     }
   };
+
   const sendButtonDisabled = useMemo(() => {
     if (!currentText) {
       return true;
     }
     return currentText.trim().length === 0;
   }, [currentText]);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !sendButtonDisabled) {
+      handleSendMessage(currentText);
+    }
+  };
 
   return (
     <>
@@ -80,7 +94,7 @@ export default function TextChatInterface({ localPeerId, localPlayerName }) {
               {chatMessages.map((message, id) => {
                 const showName = id === 0 || chatMessages[id - 1].sender !== message.sender;
                 return (
-                  <li key={id} className={`flex flex-col ${showName ? "mt-2" : "mt-0.5"}`}>
+                  <li key={message.id || id} className={`flex flex-col ${showName ? "mt-2" : "mt-0.5"}`}>
                     <TextMessageCard message={message} showName={showName} />
                   </li>
                 );
@@ -93,11 +107,7 @@ export default function TextChatInterface({ localPeerId, localPlayerName }) {
                 placeholder="Type a message..." 
                 value={currentText} 
                 onValueChange={setCurrentText} 
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !sendButtonDisabled) {
-                    handleSendMessage(currentText);
-                  }
-                }}
+                onKeyDown={handleKeyDown}
                 className="flex-1"
                 classNames={{
                   inputWrapper: "bg-black/10 hover:bg-black/20 focus-within:!bg-black/20",
@@ -116,8 +126,3 @@ export default function TextChatInterface({ localPeerId, localPlayerName }) {
     </>
   );
 }
-
-TextChatInterface.propTypes = {
-  localPeerId: PropTypes.string,
-  localPlayerName: PropTypes.string
-};

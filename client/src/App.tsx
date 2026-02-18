@@ -3,11 +3,12 @@ import { useGetAllQuizzesQuery } from "./store/api/quizzesApi";
 import QuizInfoCard from "./components/QuizInfoCard";
 import NavbarComponent from "./components/ui/Navbar";
 import "./App.css";
+import { Quiz } from "./types";
 
 function App() {
   const navigate = useNavigate();
   const isDev = import.meta.env.DEV;
-  // Using a query hook automatically fetches data and returns query values
+  
   const { data, error, isLoading } = useGetAllQuizzesQuery({ 
     onlyValid: true, 
     includeTesting: isDev 
@@ -23,7 +24,7 @@ function App() {
           <>Loading...</>
         ) : data ? (
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 xss:gap-6 xs:gap-8">
-            {data?.map((quiz, index) => (
+            {data?.map((quiz: Quiz, index: number) => (
               <li
                 key={index}
                 className=" cursor-pointer"

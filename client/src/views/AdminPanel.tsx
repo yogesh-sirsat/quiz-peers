@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, ChangeEvent } from "react";
 import {
   Button,
   useDisclosure,
@@ -18,7 +18,6 @@ import {
   Tooltip,
   Select,
   SelectItem,
-  Image,
 } from "@nextui-org/react";
 import {
   useGetAllQuizzesQuery,
@@ -44,12 +43,21 @@ import NavbarComponent from "../components/ui/Navbar";
 import supabase from "../utils/supabase";
 import { useNavigate } from "react-router-dom";
 import imageCompression from "browser-image-compression";
+import { Quiz, Question, Option as QuizOption, Category } from "../types";
+
+interface QuizForm {
+  quizId?: string;
+  quizName: string;
+  description: string;
+  coverImageUrl: string;
+  status: string;
+}
 
 export default function AdminPanel() {
   const navigate = useNavigate();
   const { data: quizzes, isLoading: loadingQuizzes } = useGetAllQuizzesQuery({ onlyValid: false, includeTesting: true });
-  const [selectedQuizId, setSelectedQuizId] = useState(null);
-  const { data: quizDetails } = useGetQuizByIdQuery(selectedQuizId, {
+  const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
+  const { data: quizDetails } = useGetQuizByIdQuery(selectedQuizId || "", {
     skip: !selectedQuizId,
   });
 
@@ -59,8 +67,8 @@ export default function AdminPanel() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const { isOpen: isQuizModalOpen, onOpen: onQuizModalOpen, onOpenChange: onQuizModalOpenChange } = useDisclosure();
-  const [quizModalMode, setQuizModalMode] = useState("create");
-  const [quizForm, setQuizForm] = useState({ quizName: "", description: "", coverImageUrl: "", status: "draft" });
+  const [quizModalMode, setQuizModalMode] = useState<"create" | "edit">("create");
+  const [quizForm, setQuizForm] = useState<QuizForm>({ quizName: "", description: "", coverImageUrl: "", status: "draft" });
 
   const filteredQuizzes = useMemo(() => {
     if (!quizzes) return [];
@@ -80,7 +88,7 @@ export default function AdminPanel() {
     onQuizModalOpen();
   };
 
-  const handleOpenEditQuiz = (quiz) => {
+  const handleOpenEditQuiz = (quiz: Quiz) => {
     setQuizModalMode("edit");
     setQuizForm({
       quizId: quiz.quiz_id,
@@ -95,17 +103,28 @@ export default function AdminPanel() {
   const handleSubmitQuiz = async () => {
     try {
       if (quizModalMode === "create") {
-        await createQuiz(quizForm).unwrap();
+        await createQuiz({
+          quiz_name: quizForm.quizName,
+          description: quizForm.description,
+          cover_image_url: quizForm.coverImageUrl,
+          status: quizForm.status as any
+        }).unwrap();
       } else {
-        await updateQuiz(quizForm).unwrap();
+        await updateQuiz({
+          quizId: quizForm.quizId || "",
+          quiz_name: quizForm.quizName,
+          description: quizForm.description,
+          cover_image_url: quizForm.coverImageUrl,
+          status: quizForm.status as any
+        }).unwrap();
       }
       onQuizModalOpenChange(false);
-    } catch (err) {
+    } catch (err: any) {
       alert("Error: " + err.message);
     }
   };
 
-  const handleDeleteQuiz = async (quizId) => {
+  const handleDeleteQuiz = async (quizId: string) => {
     if (window.confirm("Are you sure you want to delete this quiz?")) {
       const deleteQuestions = window.confirm("Do you also want to delete all associated questions that aren't used in other quizzes?");
       await deleteQuiz({ quizId, deleteQuestions }).unwrap();
@@ -295,7 +314,7 @@ export default function AdminPanel() {
                   labelPlacement="outside"
                   placeholder="Select quiz status"
                   selectedKeys={[quizForm.status]}
-                  onSelectionChange={(keys) => setQuizForm({ ...quizForm, status: Array.from(keys)[0] })}
+                  onSelectionChange={(keys) => setQuizForm({ ...quizForm, status: Array.from(keys)[0] as string })}
                   classNames={{
                     label: "font-bold text-foreground",
                     value: "text-foreground",
@@ -304,9 +323,9 @@ export default function AdminPanel() {
                     className: "dark text-foreground"
                   }}
                 >
-                  <SelectItem key="draft" value="draft">Draft</SelectItem>
-                  <SelectItem key="published" value="published">Published</SelectItem>
-                  <SelectItem key="testing" value="testing">Testing</SelectItem>
+                  <SelectItem key="draft">Draft</SelectItem>
+                  <SelectItem key="published">Published</SelectItem>
+                  <SelectItem key="testing">Testing</SelectItem>
                 </Select>
 
                 <div className="space-y-2">
@@ -352,14 +371,21 @@ export default function AdminPanel() {
   );
 }
 
-function FileUpload({ onUpload, label, accept = "*/*", folder = "misc" }) {
+interface FileUploadProps {
+    onUpload: (url: string) => void;
+    label: string;
+    accept?: string;
+    folder?: string;
+}
+
+function FileUpload({ onUpload, label, accept = "*/*", folder = "misc" }: FileUploadProps) {
     const [uploadMedia, { isLoading }] = useUploadMediaMutation();
     const [compressionProgress, setCompressionProgress] = useState(0);
     const [isCompressing, setIsCompressing] = useState(false);
-    const fileInputRef = useRef(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileChange = async (e) => {
-        let file = e.target.files[0];
+    const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+        let file = e.target.files?.[0];
         if (!file) return;
 
         // Client-side compression for images
@@ -371,7 +397,7 @@ function FileUpload({ onUpload, label, accept = "*/*", folder = "misc" }) {
                     maxSizeMB: 1,
                     maxWidthOrHeight: 1920,
                     useWebWorker: true,
-                    onProgress: (p) => setCompressionProgress(p),
+                    onProgress: (p: number) => setCompressionProgress(p),
                 };
                 file = await imageCompression(file, options);
             } catch (error) {
@@ -386,14 +412,9 @@ function FileUpload({ onUpload, label, accept = "*/*", folder = "misc" }) {
         formData.append("folder", folder);
 
         try {
-            // Append folder as a query param or manually if backend expects it in body
-            const result = await uploadMedia(formData).unwrap();
-            // Note: If you want to use the 'folder' param, you might need to adjust the mutation or URL
-            // Currently our mutation doesn't take query params easily without modification.
-            // Let's modify the mutation call in our quizzesApi if needed.
-            // But since the current endpoint is /media/upload, we can handle it there.
+            const result: any = await uploadMedia(formData).unwrap();
             onUpload(result.url);
-        } catch (err) {
+        } catch (err: any) {
             alert("Upload failed: " + (err.data?.message || err.error));
         }
     };
@@ -413,7 +434,7 @@ function FileUpload({ onUpload, label, accept = "*/*", folder = "misc" }) {
                     variant="flat" 
                     color="secondary" 
                     startContent={(isLoading || isCompressing) ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
-                    onClick={() => fileInputRef.current.click()}
+                    onClick={() => fileInputRef.current?.click()}
                     isLoading={isLoading || isCompressing}
                     className="w-fit font-bold"
                 >
@@ -424,7 +445,11 @@ function FileUpload({ onUpload, label, accept = "*/*", folder = "misc" }) {
     );
 }
 
-function QuestionsManager({ quizId }) {
+interface QuestionsManagerProps {
+    quizId: string;
+}
+
+function QuestionsManager({ quizId }: QuestionsManagerProps) {
   const { data: questions, isLoading } = useGetQuizQuestionsQuery(quizId);
   const { data: categories } = useGetAllCategoriesQuery();
   const [createQuestion] = useCreateQuestionMutation();
@@ -433,8 +458,9 @@ function QuestionsManager({ quizId }) {
   const [removeQuestionFromQuiz] = useRemoveQuestionFromQuizMutation();
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const [modalMode, setModalMode] = useState("create");
+  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [form, setForm] = useState({ 
+    questionId: "",
     questionText: "", 
     categoryId: "", 
     imageUrl: "", 
@@ -444,17 +470,17 @@ function QuestionsManager({ quizId }) {
 
   const handleOpenCreate = () => {
     setModalMode("create");
-    setForm({ questionText: "", categoryId: "", imageUrl: "", audioUrl: "", difficulty: "Medium" });
+    setForm({ questionId: "", questionText: "", categoryId: "", imageUrl: "", audioUrl: "", difficulty: "Medium" });
     onOpen();
   };
 
-  const handleOpenEdit = (q) => {
+  const handleOpenEdit = (q: Question) => {
     setModalMode("edit");
     setForm({
-      questionId: q.questionId,
-      questionText: q.questionText,
+      questionId: q.questionId || q.question_id,
+      questionText: q.questionText || q.question_text,
       categoryId: String(q.categoryId || ""),
-      imageUrl: q.imageUrl || "",
+      imageUrl: q.imageUrl || q.media_url || "",
       audioUrl: q.audioUrl || "",
       difficulty: q.difficulty || "Medium"
     });
@@ -464,17 +490,17 @@ function QuestionsManager({ quizId }) {
   const handleSubmit = async () => {
     try {
       if (modalMode === "create") {
-        await createQuestion({ ...form, quizId }).unwrap();
+        await createQuestion({ ...form, quizId } as any).unwrap();
       } else {
-        await updateQuestion(form).unwrap();
+        await updateQuestion(form as any).unwrap();
       }
       onOpenChange(false);
-    } catch (err) {
+    } catch (err: any) {
         alert("Error: " + err.message);
     }
   };
 
-  const handleDelete = async (qId) => {
+  const handleDelete = async (qId: string) => {
     if (window.confirm("This will permanently delete the question from the entire database. Continue?")) {
         await deleteQuestion(qId).unwrap();
     }
@@ -506,9 +532,9 @@ function QuestionsManager({ quizId }) {
         <Accordion variant="splitted" selectionMode="multiple" className="px-0 w-full" itemClasses={{ base: "w-full" }}>
           {questions?.map((q) => (
             <AccordionItem 
-                key={q.questionId} 
-                aria-label={q.questionText} 
-                title={<div className="font-bold text-foreground pr-4 break-words">{q.questionText}</div>}
+                key={q.questionId || q.question_id} 
+                aria-label={q.questionText || q.question_text} 
+                title={<div className="font-bold text-foreground pr-4 break-words">{q.questionText || q.question_text}</div>}
                 subtitle={
                     <div className="flex gap-2 items-center mt-1">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
@@ -518,9 +544,9 @@ function QuestionsManager({ quizId }) {
                         }`}>
                             {q.difficulty || 'Medium'}
                         </span>
-                        {(q.imageUrl || q.audioUrl) && (
+                        {(q.imageUrl || q.media_url || q.audioUrl) && (
                             <div className="flex gap-2">
-                                {q.imageUrl && <ImageIcon size={14} className="text-primary" />}
+                                {(q.imageUrl || q.media_url) && <ImageIcon size={14} className="text-primary" />}
                                 {q.audioUrl && <Music size={14} className="text-secondary" />}
                             </div>
                         )}
@@ -529,8 +555,8 @@ function QuestionsManager({ quizId }) {
                 className="shadow-md border border-default-100 mb-4 overflow-hidden"
             >
               <div className="flex flex-col gap-6">
-                <MediaPreview imageUrl={q.imageUrl} audioUrl={q.audioUrl} />
-                <OptionsManager questionId={q.questionId} correctOptionId={q.correctOptionId} />
+                <MediaPreview imageUrl={q.imageUrl || q.media_url} audioUrl={q.audioUrl} />
+                <OptionsManager questionId={q.questionId || q.question_id} correctOptionId={q.correctOptionId} />
                 
                 <Divider />
                 <div className="flex flex-col xs:flex-row justify-between items-stretch xs:items-center bg-default-50 p-4 gap-4">
@@ -542,7 +568,7 @@ function QuestionsManager({ quizId }) {
                             startContent={<X size={18} />} 
                             onClick={() => {
                                 if(window.confirm("Remove this question from this quiz?")) {
-                                    removeQuestionFromQuiz({ quizId, questionId: q.questionId });
+                                    removeQuestionFromQuiz({ quizId, questionId: q.questionId || q.question_id });
                                 }
                             }}
                             className="font-bold flex-1 xs:flex-initial"
@@ -567,7 +593,7 @@ function QuestionsManager({ quizId }) {
                             color="danger" 
                             variant="flat" 
                             startContent={<Trash2 size={18} />} 
-                            onClick={() => handleDelete(q.questionId)}
+                            onClick={() => handleDelete(q.questionId || q.question_id)}
                             className="font-bold flex-1"
                         >
                             Delete
@@ -614,7 +640,7 @@ function QuestionsManager({ quizId }) {
                         label="Difficulty" 
                         variant="bordered"
                         selectedKeys={[form.difficulty]}
-                        onSelectionChange={(keys) => setForm({ ...form, difficulty: Array.from(keys)[0] })}
+                        onSelectionChange={(keys) => setForm({ ...form, difficulty: Array.from(keys)[0] as string })}
                         labelPlacement="outside"
                         classNames={{
                             label: "font-bold text-foreground",
@@ -624,9 +650,9 @@ function QuestionsManager({ quizId }) {
                             className: "dark text-foreground"
                         }}
                     >
-                        <SelectItem key="Easy" value="Easy">Easy</SelectItem>
-                        <SelectItem key="Medium" value="Medium">Medium</SelectItem>
-                        <SelectItem key="Hard" value="Hard">Hard</SelectItem>
+                        <SelectItem key="Easy">Easy</SelectItem>
+                        <SelectItem key="Medium">Medium</SelectItem>
+                        <SelectItem key="Hard">Hard</SelectItem>
                     </Select>
                     
                     <Select 
@@ -634,7 +660,7 @@ function QuestionsManager({ quizId }) {
                         variant="bordered"
                         placeholder="Select category"
                         selectedKeys={form.categoryId ? [form.categoryId] : []}
-                        onSelectionChange={(keys) => setForm({ ...form, categoryId: Array.from(keys)[0] })}
+                        onSelectionChange={(keys) => setForm({ ...form, categoryId: Array.from(keys)[0] as string })}
                         labelPlacement="outside"
                         classNames={{
                             label: "font-bold text-foreground",
@@ -644,8 +670,8 @@ function QuestionsManager({ quizId }) {
                             className: "dark text-foreground"
                         }}
                     >
-                        {categories?.map((cat) => (
-                            <SelectItem key={String(cat.category_id)} value={String(cat.category_id)}>
+                        {(categories as any[])?.map((cat) => (
+                            <SelectItem key={String(cat.category_id)}>
                                 {cat.category_name}
                             </SelectItem>
                         )) || []}
@@ -720,7 +746,12 @@ function QuestionsManager({ quizId }) {
   );
 }
 
-function OptionsManager({ questionId, correctOptionId }) {
+interface OptionsManagerProps {
+    questionId: string;
+    correctOptionId?: string | number;
+}
+
+function OptionsManager({ questionId, correctOptionId }: OptionsManagerProps) {
   const { data: options, isLoading } = useGetOptionsByQuestionIdQuery(questionId);
   const [createOption] = useCreateOptionMutation();
   const [updateOption] = useUpdateOptionMutation();
@@ -728,20 +759,20 @@ function OptionsManager({ questionId, correctOptionId }) {
   const [setCorrectOption] = useSetCorrectOptionMutation();
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const [modalMode, setModalMode] = useState("create");
-  const [form, setForm] = useState({ optionText: "", imageUrl: "", audioUrl: "" });
+  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [form, setForm] = useState({ optionId: "", optionText: "", imageUrl: "", audioUrl: "" });
 
   const handleOpenCreate = () => {
     setModalMode("create");
-    setForm({ optionText: "", imageUrl: "", audioUrl: "" });
+    setForm({ optionId: "", optionText: "", imageUrl: "", audioUrl: "" });
     onOpen();
   };
 
-  const handleOpenEdit = (opt) => {
+  const handleOpenEdit = (opt: QuizOption) => {
     setModalMode("edit");
     setForm({
       optionId: opt.option_id,
-      optionText: opt.option_text || "",
+      optionText: opt.option_text || opt.optionText || "",
       imageUrl: opt.image_url || "",
       audioUrl: opt.audio_url || ""
     });
@@ -751,17 +782,17 @@ function OptionsManager({ questionId, correctOptionId }) {
   const handleSubmit = async () => {
     try {
       if (modalMode === "create") {
-        await createOption({ questionId, ...form }).unwrap();
+        await createOption({ questionId, option_text: form.optionText, image_url: form.imageUrl, audio_url: form.audioUrl }).unwrap();
       } else {
-        await updateOption(form).unwrap();
+        await updateOption({ optionId: form.optionId, option_text: form.optionText, image_url: form.imageUrl, audio_url: form.audioUrl }).unwrap();
       }
       onOpenChange(false);
-    } catch (err) {
+    } catch (err: any) {
       alert("Error: " + err.message);
     }
   };
 
-  const handleDelete = async (optId) => {
+  const handleDelete = async (optId: string) => {
     if (window.confirm("Delete this option?")) {
       await deleteOption(optId).unwrap();
     }
@@ -922,7 +953,13 @@ function OptionsManager({ questionId, correctOptionId }) {
   );
 }
 
-function MediaPreview({ imageUrl, audioUrl, compact = false }) {
+interface MediaPreviewProps {
+    imageUrl?: string;
+    audioUrl?: string;
+    compact?: boolean;
+}
+
+function MediaPreview({ imageUrl, audioUrl, compact = false }: MediaPreviewProps) {
     if (!imageUrl && !audioUrl) return null;
 
     return (
@@ -951,9 +988,14 @@ function MediaPreview({ imageUrl, audioUrl, compact = false }) {
     );
 }
 
-function AudioPlayer({ audioUrl, compact }) {
+interface AudioPlayerProps {
+    audioUrl: string;
+    compact?: boolean;
+}
+
+function AudioPlayer({ audioUrl, compact }: AudioPlayerProps) {
     const [isPlaying, setIsPlaying] = useState(false);
-    const audioRef = useRef(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
         audioRef.current = new Audio(audioUrl);

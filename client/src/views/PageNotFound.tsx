@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function PageNotFound() {
   const navigate = useNavigate();
-  const dogs404 = {
+  const dogs404: Record<number, string> = {
     1: "bacila-vlad-wEsZOhuwoYM-unsplash",
     2: "fermin-rodriguez-penelas-LcJkpSoA0es-unsplash",
     3: "jc-gellidon-TPZNooS1Meg-unsplash",

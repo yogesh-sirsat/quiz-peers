@@ -2,11 +2,16 @@ import { Button } from "@nextui-org/react";
 import { Sparkles, Timer, Crown, Music, Play, Pause } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState, useMemo } from "react";
-import PropTypes from "prop-types";
+import { QuizQuestion } from "../types";
 
-function AudioPlayer({ audioUrl, compact }) {
+interface AudioPlayerProps {
+  audioUrl: string;
+  compact?: boolean;
+}
+
+function AudioPlayer({ audioUrl, compact }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     audioRef.current = new Audio(audioUrl);
@@ -20,7 +25,8 @@ function AudioPlayer({ audioUrl, compact }) {
     };
   }, [audioUrl]);
 
-  const togglePlay = () => {
+  const togglePlay = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
@@ -52,6 +58,30 @@ function AudioPlayer({ audioUrl, compact }) {
   );
 }
 
+interface RoundResult {
+    peerId: string;
+    isCorrect: boolean;
+    pointsAwarded?: number;
+}
+
+interface QuizPlayRoomProps {
+  quizStatus: string;
+  currentQuestion: QuizQuestion | null;
+  questionIndex: number;
+  totalQuestions: number;
+  timeRemainingMs: number;
+  questionDurationMs: number;
+  timerPercent: number;
+  roundResults: RoundResult[];
+  topThree: any[];
+  localPeerId: string;
+  handleSubmitAnswer: (optionId: string) => void;
+  hasAnsweredCurrent: boolean;
+  selectedOptionId: string | null;
+  correctOptionId: string | null;
+  setIsLeaderboardOpen: (open: boolean) => void;
+}
+
 export default function QuizPlayRoom({
   quizStatus,
   currentQuestion,
@@ -68,7 +98,7 @@ export default function QuizPlayRoom({
   selectedOptionId,
   correctOptionId,
   setIsLeaderboardOpen
-}) {
+}: QuizPlayRoomProps) {
   const successAudio = useRef(new Audio("/sound-effects/success-yipee.mp3"));
   const failAudio = useRef(new Audio("/sound-effects/fail-trumpet.mp3"));
   const celebrationAudio = useRef(new Audio("/sound-effects/celebration-trumpets.mp3"));
@@ -112,7 +142,7 @@ export default function QuizPlayRoom({
     }
   }, [quizStatus, topThree]);
 
-  const optionClassName = (optionId) => {
+  const optionClassName = (optionId: string) => {
     if (correctOptionId !== null) {
       if (optionId === correctOptionId) {
         return "border-green-500 bg-green-500/20";
@@ -134,13 +164,10 @@ export default function QuizPlayRoom({
   };
 
   if (quizStatus === "finished") {
-    // Check if the top player has 0 score (meaning everyone has 0 or worse, essentially all losers)
-    // or if the topThree list is empty/undefined.
     const isTotalFailure = !topThree || topThree.length === 0 || (topThree[0] && topThree[0].score === 0);
 
     return (
       <div className="flex flex-col gap-4 relative overflow-hidden p-4 rounded-xl border border-background/20 bg-background/10 min-h-[400px]">
-        {/* Celebration Confetti - Only show if not a total failure */}
         {!isTotalFailure && (
           <AnimatePresence>
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -187,7 +214,6 @@ export default function QuizPlayRoom({
             <>
               <p className="opacity-85 mb-6">Final top 3</p>
               <div className="flex justify-center items-end gap-2 sm:gap-4 w-full h-48 sm:h-56 px-4">
-                 {/* Second Place */}
                  {topThree[1] && (
                    <motion.div
                      initial={{ scale: 0.5, opacity: 0, y: 50 }}
@@ -203,7 +229,6 @@ export default function QuizPlayRoom({
                    </motion.div>
                  )}
     
-                 {/* First Place */}
                  {topThree[0] && (
                    <motion.div
                      initial={{ scale: 0.5, opacity: 0, y: 50 }}
@@ -222,7 +247,6 @@ export default function QuizPlayRoom({
                    </motion.div>
                  )}
     
-                 {/* Third Place */}
                  {topThree[2] && (
                    <motion.div
                      initial={{ scale: 0.5, opacity: 0, y: 50 }}
@@ -260,11 +284,11 @@ export default function QuizPlayRoom({
       </div>
       {currentQuestion ? (
         <>
-          {currentQuestion.imageUrl && (
+          {(currentQuestion.imageUrl || currentQuestion.media_url) && (
             <div className="w-full flex justify-center mb-4 bg-black/5 rounded-xl overflow-hidden h-60">
               <img
-                src={currentQuestion.imageUrl}
-                alt="Question Image"
+                src={currentQuestion.imageUrl || currentQuestion.media_url}
+                alt="Question"
                 className="h-full w-full object-contain"
               />
             </div>
@@ -276,7 +300,7 @@ export default function QuizPlayRoom({
             </div>
           )}
 
-          <p className="text-lg font-medium">{currentQuestion.questionText}</p>
+          <p className="text-lg font-medium">{currentQuestion.questionText || currentQuestion.question_text}</p>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {shuffledOptions?.map((option) => (
               <li key={option.optionId}>
@@ -286,11 +310,11 @@ export default function QuizPlayRoom({
                   disabled={correctOptionId !== null}
                   className={`w-full text-left rounded-xl border-2 px-3 py-3 transition-all flex flex-col gap-3 min-h-[80px] ${optionClassName(option.optionId)}`}
                 >
-                   {option.imageUrl && (
+                   {(option.imageUrl || option.image_url) && (
                     <div className="w-full h-32 bg-black/5 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                       <img
-                        src={option.imageUrl}
-                        alt="Option Image"
+                        src={option.imageUrl || option.image_url}
+                        alt="Option"
                         className="h-full w-full object-contain"
                       />
                     </div>
@@ -300,7 +324,7 @@ export default function QuizPlayRoom({
                       <AudioPlayer audioUrl={option.audioUrl} compact />
                     </div>
                   )}
-                  <span className="font-bold text-center sm:text-left">{option.optionText || `Option ${option.optionId}`}</span>
+                  <span className="font-bold text-center sm:text-left">{option.optionText || option.option_text || `Option ${option.optionId}`}</span>
                 </button>
               </li>
             ))}
@@ -320,26 +344,3 @@ export default function QuizPlayRoom({
     </div>
   );
 }
-
-AudioPlayer.propTypes = {
-  audioUrl: PropTypes.string,
-  compact: PropTypes.bool
-};
-
-QuizPlayRoom.propTypes = {
-  quizStatus: PropTypes.string.isRequired,
-  currentQuestion: PropTypes.object,
-  questionIndex: PropTypes.number.isRequired,
-  totalQuestions: PropTypes.number.isRequired,
-  timeRemainingMs: PropTypes.number.isRequired,
-  questionDurationMs: PropTypes.number,
-  timerPercent: PropTypes.number.isRequired,
-  roundResults: PropTypes.array,
-  topThree: PropTypes.array,
-  localPeerId: PropTypes.string.isRequired,
-  handleSubmitAnswer: PropTypes.func.isRequired,
-  hasAnsweredCurrent: PropTypes.bool,
-  selectedOptionId: PropTypes.number,
-  correctOptionId: PropTypes.number,
-  setIsLeaderboardOpen: PropTypes.func.isRequired
-};

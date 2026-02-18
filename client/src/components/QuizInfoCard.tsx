@@ -1,11 +1,15 @@
 import { Card, CardBody, CardHeader } from "@nextui-org/card";
 import { Image } from "@nextui-org/image";
 import { Chip } from "@nextui-org/chip";
-import PropTypes from "prop-types";
 import { Tooltip } from "@nextui-org/react";
 import QuizCategories from "./QuizCategories";
+import { Quiz } from "../types";
 
-function QuizInfoCard({ quizInfo }) {
+interface QuizInfoCardProps {
+  quizInfo: Quiz;
+}
+
+function QuizInfoCard({ quizInfo }: QuizInfoCardProps) {
   return (
     <Card className="h-full py-2 bg-background/60 shadow-2xl" isBlurred>
       <CardHeader className="pb-0 pt-2 px-4 flex-col items-center">
@@ -53,7 +57,7 @@ function QuizInfoCard({ quizInfo }) {
           <div className="absolute z-10 bottom-2 right-2 flex flex-row gap-1">
             <Tooltip
               color="foreground"
-              content={Math.round(quizInfo?.contestants_count) + " Times Played"}
+              content={Math.round(quizInfo?.contestants_count || 0) + " Times Played"}
             >
               <Chip
                 className="min-w-4 min-h-4 cursor-pointer"
@@ -65,12 +69,12 @@ function QuizInfoCard({ quizInfo }) {
                 size="sm"
                 variant="flat"
               >
-                Played : {Math.round(quizInfo?.contestants_count)}
+                Played : {Math.round(quizInfo?.contestants_count || 0)}
               </Chip>
             </Tooltip>
             <Tooltip
               color="foreground"
-              content={Math.round(quizInfo?.questions_count) + " Total Questions"}
+              content={Math.round(quizInfo?.questions_count || 0) + " Total Questions"}
             >
               <Chip
                 className="min-w-4 min-h-4 cursor-pointer"
@@ -82,7 +86,7 @@ function QuizInfoCard({ quizInfo }) {
                 size="sm"
                 variant="flat"
               >
-                Qs : {Math.round(quizInfo?.questions_count)}
+                Qs : {Math.round(quizInfo?.questions_count || 0)}
               </Chip>
             </Tooltip>
           </div>
@@ -95,9 +99,5 @@ function QuizInfoCard({ quizInfo }) {
     </Card>
   );
 }
-
-QuizInfoCard.propTypes = {
-  quizInfo: PropTypes.object
-};
 
 export default QuizInfoCard;
