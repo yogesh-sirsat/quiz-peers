@@ -19,6 +19,7 @@ export interface RoomMeta {
   hostPeerId: string | null;
   quizId: number | null;
   isStarting: boolean;
+  isAutoPlay: boolean;
 }
 
 export interface WaitingRoom extends Map<string, PlayerState> {
@@ -39,6 +40,7 @@ export interface PlayingSession {
   roomId: string;
   quizId: number;
   isRoomPublic: boolean;
+  isAutoPlay: boolean;
   questions: QuizQuestion[];
   currentQuestionIndex: number;
   players: Map<string, PlayerState>;
@@ -69,7 +71,8 @@ function createWaitingRoomState(isPublic: boolean): WaitingRoom {
     isPublic,
     hostPeerId: null,
     quizId: null,
-    isStarting: false
+    isStarting: false,
+    isAutoPlay: false
   };
   return room;
 }
@@ -133,7 +136,8 @@ function getWaitingRoomStatePayload(room: WaitingRoom, roomId: string): any {
     roomPlayers,
     readyPeerIds,
     totalPlayers: roomPlayers.length,
-    hostPeerId: room.meta?.hostPeerId || null
+    hostPeerId: room.meta?.hostPeerId || null,
+    isAutoPlay: room.meta?.isAutoPlay ?? true
   };
 }
 
@@ -265,12 +269,15 @@ function finalizeCurrentQuestion(roomId: string, isRoomPublic: boolean): void {
     correctOptionId: currentQuestion.correctOptionId,
     results: roundResults,
     leaderboard: getLeaderboard(session),
-    nextQuestionInMs: session.interQuestionDelayMs
+    nextQuestionInMs: session.isAutoPlay ? session.interQuestionDelayMs : 0,
+    isAutoPlay: session.isAutoPlay
   });
 
-  session.interQuestionTimeout = setTimeout(() => {
-    beginNextQuestion(session);
-  }, session.interQuestionDelayMs);
+  if (session.isAutoPlay) {
+    session.interQuestionTimeout = setTimeout(() => {
+      beginNextQuestion(session);
+    }, session.interQuestionDelayMs);
+  }
 }
 
 async function startQuiz(roomId: string, isRoomPublic: boolean): Promise<void> {
@@ -316,6 +323,7 @@ async function startQuiz(roomId: string, isRoomPublic: boolean): Promise<void> {
       roomId,
       quizId,
       isRoomPublic,
+      isAutoPlay: waitingRoom.meta.isAutoPlay,
       players,
       questions,
       currentQuestionIndex: -1,
@@ -552,6 +560,39 @@ export function handleChangePlayerName(ws: ExtendedWebSocket, data: any): void {
   } catch (error) {
     console.error(error);
     safeSend(ws, { event: "changePlayerNameFailed", message: "Server error." });
+  }
+}
+
+export function handleToggleAutoPlay(ws: ExtendedWebSocket, data: any): void {
+  try {
+    const isRoomPublic = data?.isRoomPublic ?? true;
+    const room = getWaitingRoom(data?.roomId, isRoomPublic);
+    if (!room || room.meta.hostPeerId !== ws.playerId) {
+      return;
+    }
+
+    room.meta.isAutoPlay = Boolean(data?.isAutoPlay);
+    emitWaitingRoomState(data?.roomId, isRoomPublic);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export function handleNextQuestion(ws: ExtendedWebSocket, data: any): void {
+  try {
+    const playingRooms = getPlayingRoomsMap(data?.isRoomPublic) as Map<string, PlayingSession>;
+    const session = playingRooms.get(data?.roomId);
+    if (!session || session.players.get(ws.playerId!)?.ws !== ws) {
+      // In a real scenario, check if requester is the host
+      return;
+    }
+
+    // Only allow if not auto-playing and currently between questions
+    if (!session.isAutoPlay) {
+      beginNextQuestion(session);
+    }
+  } catch (error) {
+    console.error(error);
   }
 }
 

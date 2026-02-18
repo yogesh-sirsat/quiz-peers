@@ -7,7 +7,9 @@ import {
   handleStartPrivateQuiz,
   handleSubmitAnswer,
   handleChangePlayerName,
-  handleSkipTimer
+  handleSkipTimer,
+  handleToggleAutoPlay,
+  handleNextQuestion
 } from "../websockets/rooms.websocket.ts";
 
 let liveConnections = 0;
@@ -41,6 +43,12 @@ function setupWebSocketServer(wss: WebSocketServer): void {
             break;
           case "skipTimer":
             handleSkipTimer(ws, data);
+            break;
+          case "toggleAutoPlay":
+            handleToggleAutoPlay(ws, data);
+            break;
+          case "nextQuestion":
+            handleNextQuestion(ws, data);
             break;
           default:
             break;

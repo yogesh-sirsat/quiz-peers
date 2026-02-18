@@ -15,16 +15,16 @@ function QuizInfoCard({ quizInfo }: QuizInfoCardProps) {
       <CardHeader className="pb-0 pt-2 px-4 flex-col items-center">
         <div className="relative">
           <Image
-            alt={quizInfo?.quiz_name + " cover image"}
+            alt={quizInfo?.quizName + " cover image"}
             className="object-contain rounded-xl h-48 w-full bg-black/5"
-            src={quizInfo?.cover_image_url}
+            src={quizInfo?.coverImageUrl}
             isBlurred
             isZoomed
           />
-          {quizInfo?.success_rate ? (
+          {quizInfo?.successRate ? (
             <Tooltip
               color="foreground"
-              content={Math.round(quizInfo?.success_rate) + "% Success Rate."}
+              content={Math.round(quizInfo?.successRate) + "% Success Rate."}
             >
               <Chip
                 className="absolute z-10 bottom-2 left-2 min-w-4 min-h-4 cursor-pointer"
@@ -36,7 +36,7 @@ function QuizInfoCard({ quizInfo }: QuizInfoCardProps) {
                 size="sm"
                 variant="flat"
               >
-                SR : {Math.round(quizInfo?.success_rate)}%
+                SR : {Math.round(quizInfo?.successRate)}%
               </Chip>
             </Tooltip>
           ) : null}
@@ -57,7 +57,7 @@ function QuizInfoCard({ quizInfo }: QuizInfoCardProps) {
           <div className="absolute z-10 bottom-2 right-2 flex flex-row gap-1">
             <Tooltip
               color="foreground"
-              content={Math.round(quizInfo?.contestants_count || 0) + " Times Played"}
+              content={Math.round(quizInfo?.contestantsCount || 0) + " Times Played"}
             >
               <Chip
                 className="min-w-4 min-h-4 cursor-pointer"
@@ -69,12 +69,12 @@ function QuizInfoCard({ quizInfo }: QuizInfoCardProps) {
                 size="sm"
                 variant="flat"
               >
-                Played : {Math.round(quizInfo?.contestants_count || 0)}
+                Played : {Math.round(quizInfo?.contestantsCount || 0)}
               </Chip>
             </Tooltip>
             <Tooltip
               color="foreground"
-              content={Math.round(quizInfo?.questions_count || 0) + " Total Questions"}
+              content={Math.round(quizInfo?.questionsCount || 0) + " Total Questions"}
             >
               <Chip
                 className="min-w-4 min-h-4 cursor-pointer"
@@ -86,14 +86,14 @@ function QuizInfoCard({ quizInfo }: QuizInfoCardProps) {
                 size="sm"
                 variant="flat"
               >
-                Qs : {Math.round(quizInfo?.questions_count || 0)}
+                Qs : {Math.round(quizInfo?.questionsCount || 0)}
               </Chip>
             </Tooltip>
           </div>
         </div>
       </CardHeader>
       <CardBody className="overflow-visible py-2 px-4">
-        <h3 className="font-semibold text-xl mb-1">{quizInfo?.quiz_name}</h3>
+        <h3 className="font-semibold text-xl mb-1">{quizInfo?.quizName}</h3>
         <QuizCategories categories={quizInfo?.categories} isCard max={3} />
       </CardBody>
     </Card>

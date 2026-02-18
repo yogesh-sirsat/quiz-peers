@@ -20,7 +20,9 @@ export type WebSocketEvent =
   | 'answerAccepted'
   | 'questionResult'
   | 'playerLeftPlayingRoom'
-  | 'quizFinished';
+  | 'quizFinished'
+  | 'toggleAutoPlay'
+  | 'nextQuestion';
 
 export interface WebSocketMessage {
   event: WebSocketEvent;

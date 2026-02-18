@@ -1,14 +1,14 @@
 export interface QuizDTO {
-  quiz_id: number;
-  quiz_name: string;
+  quizId: number;
+  quizName: string;
   description?: string;
-  cover_image_url?: string;
+  coverImageUrl?: string;
   status?: 'published' | 'testing' | 'draft';
-  created_at?: string | Date;
-  updated_at?: string | Date;
-  contestants_count?: number;
-  success_rate?: number;
-  questions_count?: number;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+  contestantsCount?: number;
+  successRate?: number;
+  questionsCount?: number;
   categories?: string[];
 }
 
@@ -27,8 +27,8 @@ export interface QuizUpdateInput {
 }
 
 export interface CategoryDTO {
-  category_id: number;
-  category_name: string;
+  categoryId: number;
+  categoryName: string;
 }
 
 export interface QuizParams {

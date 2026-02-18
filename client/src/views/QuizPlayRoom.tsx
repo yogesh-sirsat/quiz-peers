@@ -1,5 +1,5 @@
 import { Button } from "@nextui-org/react";
-import { Sparkles, Timer, Crown, Music, Play, Pause } from "lucide-react";
+import { Sparkles, Timer, Crown, Music, Play, Pause, FastForward } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { QuizQuestion } from "../types";
@@ -70,16 +70,17 @@ interface QuizPlayRoomProps {
   questionIndex: number;
   totalQuestions: number;
   timeRemainingMs: number;
-  questionDurationMs: number;
   timerPercent: number;
   roundResults: RoundResult[];
   topThree: any[];
   localPeerId: string;
   handleSubmitAnswer: (optionId: number) => void;
-  hasAnsweredCurrent: boolean;
   selectedOptionId: number | null;
   correctOptionId: number | null;
   setIsLeaderboardOpen: (open: boolean) => void;
+  isAutoPlay: boolean;
+  isHost: boolean;
+  handleNextQuestion: () => void;
 }
 
 export default function QuizPlayRoom({
@@ -88,16 +89,17 @@ export default function QuizPlayRoom({
   questionIndex,
   totalQuestions,
   timeRemainingMs,
-  questionDurationMs,
   timerPercent,
   roundResults,
   topThree,
   localPeerId,
   handleSubmitAnswer,
-  hasAnsweredCurrent,
   selectedOptionId,
   correctOptionId,
-  setIsLeaderboardOpen
+  setIsLeaderboardOpen,
+  isAutoPlay,
+  isHost,
+  handleNextQuestion
 }: QuizPlayRoomProps) {
   const successAudio = useRef(new Audio("/sound-effects/success-yipee.mp3"));
   const failAudio = useRef(new Audio("/sound-effects/fail-trumpet.mp3"));
@@ -106,7 +108,7 @@ export default function QuizPlayRoom({
   const shuffledOptions = useMemo(() => {
     if (!currentQuestion?.options) return [];
     return [...currentQuestion.options].sort(() => Math.random() - 0.5);
-  }, [currentQuestion?.questionId]);
+  }, [currentQuestion?.options]);
 
   useEffect(() => {
     successAudio.current.volume = 0.5;
@@ -144,13 +146,13 @@ export default function QuizPlayRoom({
 
   const optionClassName = (optionId: number) => {
     if (correctOptionId !== null) {
-      if (optionId === correctOptionId) {
+      if (optionId === Number(correctOptionId)) {
         return "border-green-500 bg-green-500/20";
       }
-      if (optionId === selectedOptionId && selectedOptionId !== correctOptionId) {
+      if (optionId === Number(selectedOptionId) && Number(selectedOptionId) !== Number(correctOptionId)) {
         return "border-red-500 bg-red-500/20";
       }
-    } else if (selectedOptionId === optionId) {
+    } else if (Number(selectedOptionId) === optionId) {
       return "border-amber-400 bg-amber-400/20";
     }
     return "border-background/20 bg-background/10 hover:bg-background/20";
@@ -330,12 +332,34 @@ export default function QuizPlayRoom({
             ))}
           </ul>
 
-          {roundResults.length > 0 ? (
-            <p className="text-sm font-medium">
-              {roundResults.find((result) => result.peerId === localPeerId)?.isCorrect
-                ? `Correct! +${roundResults.find((result) => result.peerId === localPeerId)?.pointsAwarded || 0} pts`
-                : "Round result is out."}
-            </p>
+          {roundResults.length > 0 && correctOptionId !== null ? (
+            <div className="mt-4 flex flex-col items-center gap-3">
+              <p className="text-sm font-bold text-center bg-background/20 py-2 px-4 rounded-lg w-full">
+                {roundResults.find((result) => result.peerId === localPeerId)?.isCorrect
+                  ? `✨ Correct! +${roundResults.find((result) => result.peerId === localPeerId)?.pointsAwarded || 0} pts`
+                  : "❌ Incorrect. Better luck next time!"}
+              </p>
+              
+              {!isAutoPlay && quizStatus === "playing" && (
+                <div className="w-full flex justify-center mt-2">
+                  {isHost ? (
+                    <Button 
+                      color="success" 
+                      variant="solid"
+                      onClick={handleNextQuestion}
+                      className="font-black w-full h-12 text-lg shadow-lg"
+                      startContent={<FastForward size={24} />}
+                    >
+                      NEXT QUESTION
+                    </Button>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 opacity-80">
+                      <p className="text-sm font-bold animate-pulse text-secondary italic">Waiting for host to proceed...</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           ) : null}
         </>
       ) : (

@@ -4,7 +4,7 @@ import QuizModalContent from "./QuizModalContent";
 import { useGetQuizByIdQuery } from "../../store/api/quizzesApi";
 
 interface QuizNameCardProps {
-  quizId: string;
+  quizId: number;
 }
 
 export default function QuizNameCard({ quizId }: QuizNameCardProps) {
@@ -24,7 +24,7 @@ export default function QuizNameCard({ quizId }: QuizNameCardProps) {
       ) : quizData ? (
         <div className="flex flex-col gap-2 text-foreground bg-background/60 shadow-2xl p-3 xxs:p-4 xs:p-6 rounded-2xl">
           <h1 className="text-xl xs:text-2xl sm:text-3xl font-semibold">
-            {quizData?.quiz_name}
+            {quizData?.quizName}
           </h1>
           <div className="text-sm">
             <span>{quizData?.description} </span>

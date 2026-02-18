@@ -25,7 +25,7 @@ import {
   useRemoveQuestionFromQuizMutation,
   useGetAllCategoriesQuery,
 } from "../../store/api/quizzesApi";
-import { QuestionDTO, QuizQuestion, CategoryDTO } from "../../types";
+import { QuizQuestion } from "../../types";
 import { MediaPreview } from "./MediaPreview";
 import { FileUpload } from "./FileUpload";
 import { OptionsManager } from "./OptionsManager";
@@ -256,8 +256,8 @@ export function QuestionsManager({ quizId }: QuestionsManagerProps) {
                         }}
                     >
                         {(categories || [])?.map((cat: CategoryDTO) => (
-                            <SelectItem key={String(cat.category_id)}>
-                                {cat.category_name}
+                            <SelectItem key={String(cat.categoryId)}>
+                                {cat.categoryName}
                             </SelectItem>
                         ))}
                     </Select>
