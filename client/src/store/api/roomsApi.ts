@@ -7,10 +7,10 @@ export const roomsApi = createApi({
   reducerPath: "roomsApi",
   baseQuery: fetchBaseQuery({ baseUrl: BASE_URL }),
   endpoints: (builder) => ({
-    getPublicRoomId: builder.query<string, string>({
+    getPublicRoomId: builder.query<string, number>({
       query: (quizId) => `/rooms/get-public-room-id?quizId=${quizId}`,
     }),
-    getIdForPrivateRoom: builder.query<string, string>({
+    getIdForPrivateRoom: builder.query<string, number>({
       query: (quizId) => `/rooms/get-id-for-private-room?quizId=${quizId}`,
     }),
     getRoomDetailsById: builder.query<RoomDetails, string>({

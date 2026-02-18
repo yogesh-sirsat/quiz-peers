@@ -1,4 +1,4 @@
-export interface Option {
+export interface OptionDTO {
   option_id: number;
   question_id: number;
   option_text: string;
@@ -26,8 +26,4 @@ export interface QuizOption {
   optionText: string;
   imageUrl?: string;
   audioUrl?: string;
-  option_id?: number;
-  option_text?: string;
-  image_url?: string;
-  audio_url?: string;
 }

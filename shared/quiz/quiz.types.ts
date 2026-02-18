@@ -1,4 +1,4 @@
-export interface Quiz {
+export interface QuizDTO {
   quiz_id: number;
   quiz_name: string;
   description?: string;
@@ -26,7 +26,7 @@ export interface QuizUpdateInput {
   status?: 'draft' | 'published' | 'testing';
 }
 
-export interface Category {
+export interface CategoryDTO {
   category_id: number;
   category_name: string;
 }

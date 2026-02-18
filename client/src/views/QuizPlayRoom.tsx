@@ -75,10 +75,10 @@ interface QuizPlayRoomProps {
   roundResults: RoundResult[];
   topThree: any[];
   localPeerId: string;
-  handleSubmitAnswer: (optionId: string) => void;
+  handleSubmitAnswer: (optionId: number) => void;
   hasAnsweredCurrent: boolean;
-  selectedOptionId: string | null;
-  correctOptionId: string | null;
+  selectedOptionId: number | null;
+  correctOptionId: number | null;
   setIsLeaderboardOpen: (open: boolean) => void;
 }
 
@@ -142,7 +142,7 @@ export default function QuizPlayRoom({
     }
   }, [quizStatus, topThree]);
 
-  const optionClassName = (optionId: string) => {
+  const optionClassName = (optionId: number) => {
     if (correctOptionId !== null) {
       if (optionId === correctOptionId) {
         return "border-green-500 bg-green-500/20";
@@ -284,10 +284,10 @@ export default function QuizPlayRoom({
       </div>
       {currentQuestion ? (
         <>
-          {(currentQuestion.imageUrl || currentQuestion.media_url) && (
+          {currentQuestion.imageUrl && (
             <div className="w-full flex justify-center mb-4 bg-black/5 rounded-xl overflow-hidden h-60">
               <img
-                src={currentQuestion.imageUrl || currentQuestion.media_url}
+                src={currentQuestion.imageUrl}
                 alt="Question"
                 className="h-full w-full object-contain"
               />
@@ -300,7 +300,7 @@ export default function QuizPlayRoom({
             </div>
           )}
 
-          <p className="text-lg font-medium">{currentQuestion.questionText || currentQuestion.question_text}</p>
+          <p className="text-lg font-medium">{currentQuestion.questionText}</p>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {shuffledOptions?.map((option) => (
               <li key={option.optionId}>
@@ -310,10 +310,10 @@ export default function QuizPlayRoom({
                   disabled={correctOptionId !== null}
                   className={`w-full text-left rounded-xl border-2 px-3 py-3 transition-all flex flex-col gap-3 min-h-[80px] ${optionClassName(option.optionId)}`}
                 >
-                   {(option.imageUrl || option.image_url) && (
+                   {option.imageUrl && (
                     <div className="w-full h-32 bg-black/5 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                       <img
-                        src={option.imageUrl || option.image_url}
+                        src={option.imageUrl}
                         alt="Option"
                         className="h-full w-full object-contain"
                       />
@@ -324,7 +324,7 @@ export default function QuizPlayRoom({
                       <AudioPlayer audioUrl={option.audioUrl} compact />
                     </div>
                   )}
-                  <span className="font-bold text-center sm:text-left">{option.optionText || option.option_text || `Option ${option.optionId}`}</span>
+                  <span className="font-bold text-center sm:text-left">{option.optionText || `Option ${option.optionId}`}</span>
                 </button>
               </li>
             ))}

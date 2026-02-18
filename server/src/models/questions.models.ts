@@ -1,28 +1,28 @@
 import * as db from "../database/postgres.database.ts";
-import { Question, QuestionCreateInput, QuestionUpdateInput } from "../interfaces/question.interface.ts";
+import { QuestionDTO, QuestionCreateInput, QuestionUpdateInput } from "../interfaces/question.interface.ts";
 
-export async function createQuestionData({ questionText, categoryId, imageUrl, audioUrl, difficulty }: QuestionCreateInput): Promise<Question> {
+export async function createQuestionData({ questionText, categoryId, imageUrl, audioUrl, difficulty }: QuestionCreateInput): Promise<QuestionDTO> {
   const queryStr = `
     INSERT INTO quiz_questions (question_text, category_id, image_url, audio_url, difficulty)
     VALUES ($1, $2, $3, $4, $5)
     RETURNING *
   `;
-  const result = await db.query<Question>(queryStr, [questionText, categoryId, imageUrl, audioUrl, difficulty]);
+  const result = await db.query<QuestionDTO>(queryStr, [questionText, categoryId, imageUrl, audioUrl, difficulty]);
   return result.rows[0];
 }
 
-export async function getQuestionByIdData(questionId: number): Promise<Question> {
+export async function getQuestionByIdData(questionId: number): Promise<QuestionDTO> {
   const queryStr = `
     SELECT qq.*, co.correct_option_id
     FROM quiz_questions qq
     LEFT JOIN correct_options co ON qq.question_id = co.question_id
     WHERE qq.question_id = $1
   `;
-  const result = await db.query<Question>(queryStr, [questionId]);
+  const result = await db.query<QuestionDTO>(queryStr, [questionId]);
   return result.rows[0];
 }
 
-export async function getAllQuestionsData(): Promise<Question[]> {
+export async function getAllQuestionsData(): Promise<QuestionDTO[]> {
   const queryStr = `
     SELECT qq.*, co.correct_option_id, qc.category_name
     FROM quiz_questions qq
@@ -30,11 +30,11 @@ export async function getAllQuestionsData(): Promise<Question[]> {
     LEFT JOIN quiz_categories qc ON qq.category_id = qc.category_id
     ORDER BY qq.created_at DESC
   `;
-  const result = await db.query<Question>(queryStr);
+  const result = await db.query<QuestionDTO>(queryStr);
   return result.rows;
 }
 
-export async function updateQuestionData(questionId: number, { questionText, categoryId, imageUrl, audioUrl, difficulty }: QuestionUpdateInput): Promise<Question> {
+export async function updateQuestionData(questionId: number, { questionText, categoryId, imageUrl, audioUrl, difficulty }: QuestionUpdateInput): Promise<QuestionDTO> {
   const queryStr = `
     UPDATE quiz_questions
     SET question_text = COALESCE($1, question_text),
@@ -46,7 +46,7 @@ export async function updateQuestionData(questionId: number, { questionText, cat
     WHERE question_id = $6
     RETURNING *
   `;
-  const result = await db.query<Question>(queryStr, [questionText, categoryId, imageUrl, audioUrl, difficulty, questionId]);
+  const result = await db.query<QuestionDTO>(queryStr, [questionText, categoryId, imageUrl, audioUrl, difficulty, questionId]);
   return result.rows[0];
 }
 

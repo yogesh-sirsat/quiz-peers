@@ -3,7 +3,7 @@ import { useGetAllQuizzesQuery } from "./store/api/quizzesApi";
 import QuizInfoCard from "./components/QuizInfoCard";
 import NavbarComponent from "./components/ui/Navbar";
 import "./App.css";
-import { Quiz } from "./types";
+import { QuizDTO } from "./types";
 
 function App() {
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ function App() {
           <>Loading...</>
         ) : data ? (
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 xss:gap-6 xs:gap-8">
-            {data?.map((quiz: Quiz, index: number) => (
+            {data?.map((quiz: QuizDTO, index: number) => (
               <li
                 key={index}
                 className=" cursor-pointer"

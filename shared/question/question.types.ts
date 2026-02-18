@@ -1,6 +1,6 @@
-import { Option, QuizOption } from '../option/option.types';
+import { OptionDTO, QuizOption } from '../option/option.types';
 
-export interface Question {
+export interface QuestionDTO {
   question_id: number;
   question_text: string;
   quiz_id?: number;
@@ -12,7 +12,7 @@ export interface Question {
   correct_option_id?: number;
   created_at?: string | Date;
   updated_at?: string | Date;
-  options?: Option[];
+  options?: OptionDTO[];
 }
 
 export interface QuestionCreateInput {
@@ -34,13 +34,11 @@ export interface QuestionUpdateInput {
 export interface QuizQuestion {
   questionId: number;
   questionText: string;
+  categoryId?: number;
+  categoryName?: string;
   imageUrl?: string;
   audioUrl?: string;
   difficulty: string;
   correctOptionId?: number;
   options: QuizOption[];
-  question_id?: number;
-  question_text?: string;
-  media_url?: string;
-  media_type?: string;
 }
