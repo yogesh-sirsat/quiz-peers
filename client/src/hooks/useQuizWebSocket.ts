@@ -4,11 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import Peer, { DataConnection } from 'peerjs';
 import { addChatMessage, addUpdateRoomPlayer, removeRoomPlayer } from '../store/features/roomSlice';
-import { LeaderboardEntry, QuizQuestion, WebSocketEvent } from '../types';
+import { LeaderboardEntry, QuizQuestion } from '../types';
 
 export type QuizStatus = "waiting" | "playing" | "finished";
 
-export interface CurrentQuestion extends QuizQuestion {}
+export type CurrentQuestion = QuizQuestion;
 
 export interface ConnectionData {
     type: string;
@@ -41,11 +41,13 @@ export function useQuizWebSocket(
   const [totalQuestions, setTotalQuestions] = useState<number>(0);
   const [questionEndsAt, setQuestionEndsAt] = useState<number>(0);
   const [questionDurationMs, setQuestionDurationMs] = useState<number>(15000);
+  const [correctOptionId, setCorrectOptionId] = useState<number | null>(null);
   
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [roundResults, setRoundResults] = useState<any[]>([]);
   const [topThree, setTopThree] = useState<any[]>([]);
   const [skipCount, setSkipCount] = useState<number>(0);
+  const [isAutoPlay, setIsAutoPlay] = useState<boolean>(false);
   const [isWsConnected, setIsWsConnected] = useState<boolean>(false);
   const [roomError, setRoomError] = useState<string | null>(null);
 
@@ -150,16 +152,19 @@ export function useQuizWebSocket(
 
     peerRef.current.on("connection", (conn: DataConnection) => {
       setTimeout(() => {
-        dispatch(addUpdateRoomPlayer({
-          key: conn.peer,
-          value: { dataConnection: conn, playerName: (conn.metadata as any)?.playerName, isMute: false }
-        }));
-        dispatch(addChatMessage({
-          id: uuidv4(),
-          sender: "System",
-          text: `${(conn.metadata as any)?.playerName} joined the room!`,
-          timestamp: Date.now()
-        }));
+        const remotePlayerName = (conn.metadata as any)?.playerName;
+        if (remotePlayerName) {
+            dispatch(addUpdateRoomPlayer({
+            key: conn.peer,
+            value: { dataConnection: conn, playerName: remotePlayerName, isMute: false }
+            }));
+            dispatch(addChatMessage({
+            id: uuidv4(),
+            sender: "System",
+            text: `${remotePlayerName} joined the room!`,
+            timestamp: Date.now()
+            }));
+        }
         conn.on("data", (data: any) => {
           handleConnectionData(data as ConnectionData);
         });
@@ -218,12 +223,15 @@ export function useQuizWebSocket(
           setHostPeerId(data?.hostPeerId || null);
           setReadyPeerIds(data?.readyPeerIds || []);
           setTotalPlayers(data?.totalPlayers || 0);
+          setIsAutoPlay(data?.isAutoPlay ?? true);
           if (data?.roomPlayers) {
             data.roomPlayers.forEach((player: any) => {
-              dispatch(addUpdateRoomPlayer({
-                key: player.peerId,
-                value: { playerName: player.playerName }
-              }));
+              if (player.peerId && player.peerId !== "undefined" && player.peerId !== peerId) {
+                dispatch(addUpdateRoomPlayer({
+                  key: player.peerId,
+                  value: { playerName: player.playerName }
+                }));
+              }
             });
           }
           break;
@@ -243,6 +251,7 @@ export function useQuizWebSocket(
           setQuestionDurationMs(data?.questionDurationMs || 15000);
           setQuestionEndsAt(data?.questionEndsAt || 0);
           setLeaderboard(data?.leaderboard || []);
+          setCorrectOptionId(null);
           setSkipCount(0);
           break;
         case "skipTimerUpdate":
@@ -255,6 +264,8 @@ export function useQuizWebSocket(
           setQuestionEndsAt(0);
           setRoundResults(data?.results || []);
           setLeaderboard(data?.leaderboard || []);
+          setCorrectOptionId(data?.correctOptionId || null);
+          setIsAutoPlay(data?.isAutoPlay ?? false);
           break;
         case "playerLeftPlayingRoom":
           setLeaderboard(data?.leaderboard || []);
@@ -302,10 +313,12 @@ export function useQuizWebSocket(
     totalQuestions,
     questionEndsAt,
     questionDurationMs,
+    correctOptionId,
     leaderboard,
     roundResults,
     topThree,
     skipCount,
+    isAutoPlay,
     isWsConnected,
     roomError,
     sendJson,
@@ -313,6 +326,7 @@ export function useQuizWebSocket(
     setRoundResults,
     setCurrentQuestion,
     setLeaderboard,
-    setTopThree
+    setTopThree,
+    setIsAutoPlay
   };
 }

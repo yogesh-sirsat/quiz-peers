@@ -21,7 +21,7 @@ export async function createQuestion(req: Request, res: Response, next: NextFunc
     const data = await createQuestionData({ questionText, categoryId, imageUrl, audioUrl, difficulty });
     
     if (quizId) {
-      await addQuestionToQuizData(Number(quizId), data.question_id);
+      await addQuestionToQuizData(Number(quizId), data.questionId);
     }
     
     res.status(201).send(data);
@@ -115,7 +115,7 @@ export async function setCorrectOption(req: Request, res: Response, next: NextFu
     }
 
     const option = await getOptionByIdData(Number(optionId));
-    if (!option || Number(option.question_id) !== Number(questionId)) {
+    if (!option || Number(option.questionId) !== Number(questionId)) {
       throw new HttpAppError("Option does not belong to this question", 400);
     }
 

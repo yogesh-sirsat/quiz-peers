@@ -1,5 +1,26 @@
 import * as db from "../database/postgres.database.ts";
-import { QuizDTO, QuizCreateInput, QuizUpdateInput, QuizQuestion, CategoryDTO } from "../interfaces/quiz.interface.ts";
+function mapQuizToDTO(row: any): QuizDTO {
+  return {
+    quizId: row.quiz_id,
+    quizName: row.quiz_name,
+    description: row.description,
+    coverImageUrl: row.cover_image_url,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    contestantsCount: row.contestants_count,
+    successRate: row.success_rate,
+    questionsCount: row.questions_count,
+    categories: row.categories
+  };
+}
+
+function mapCategoryToDTO(row: any): CategoryDTO {
+  return {
+    categoryId: row.category_id,
+    categoryName: row.category_name
+  };
+}
 
 export async function getAllQuizzesData(onlyValid = true, includeTesting = false): Promise<QuizDTO[]> {
   let queryStr = `
@@ -56,8 +77,8 @@ export async function getAllQuizzesData(onlyValid = true, includeTesting = false
       GROUP BY
         qz.quiz_id
     `;
-  const result = await db.query<QuizDTO>(queryStr);
-  return result.rows;
+  const result = await db.query<any>(queryStr);
+  return result.rows.map(mapQuizToDTO);
 }
 
 export async function createQuizData({ quizName, description, coverImageUrl, status = 'draft' }: QuizCreateInput): Promise<QuizDTO> {
@@ -66,8 +87,8 @@ export async function createQuizData({ quizName, description, coverImageUrl, sta
     VALUES ($1, $2, $3, $4)
     RETURNING *
   `;
-  const result = await db.query<QuizDTO>(queryStr, [quizName, description, coverImageUrl, status]);
-  return result.rows[0];
+  const result = await db.query<any>(queryStr, [quizName, description, coverImageUrl, status]);
+  return mapQuizToDTO(result.rows[0]);
 }
 
 export async function updateQuizData(quizId: number, { quizName, description, coverImageUrl, status }: QuizUpdateInput): Promise<QuizDTO> {
@@ -81,8 +102,8 @@ export async function updateQuizData(quizId: number, { quizName, description, co
     WHERE quiz_id = $5
     RETURNING *
   `;
-  const result = await db.query<QuizDTO>(queryStr, [quizName, description, coverImageUrl, status, quizId]);
-  return result.rows[0];
+  const result = await db.query<any>(queryStr, [quizName, description, coverImageUrl, status, quizId]);
+  return mapQuizToDTO(result.rows[0]);
 }
 
 export async function deleteQuizData(quizId: number, deleteQuestions = false): Promise<boolean> {
@@ -132,8 +153,8 @@ export async function getQuizByIdData(quizId: number): Promise<QuizDTO> {
     GROUP BY
       qz.quiz_id
   `;
-  const result = await db.query<QuizDTO>(queryStr, [quizId]);
-  return result.rows[0];
+  const result = await db.query<any>(queryStr, [quizId]);
+  return mapQuizToDTO(result.rows[0]);
 }
 
 export async function getQuizQuestionsForPlay(quizId: number): Promise<QuizQuestion[]> {
@@ -193,17 +214,26 @@ export async function getQuizQuestionsForPlay(quizId: number): Promise<QuizQuest
     }
   });
 
-  const allQuestions: QuizQuestion[] = questionsResult.rows.map((question: any) => ({
-    questionId: question.question_id,
-    questionText: question.question_text,
-    categoryId: question.category_id,
-    categoryName: question.category_name,
-    imageUrl: question.image_url,
-    audioUrl: question.audio_url,
-    difficulty: question.difficulty || "Medium",
-    correctOptionId: question.correct_option_id,
-    options: optionsByQuestionId.get(question.question_id) || []
-  }));
+  const allQuestions: QuizQuestion[] = questionsResult.rows.map((question: any) => {
+    const options = optionsByQuestionId.get(question.question_id) || [];
+    // Shuffle options using Fisher-Yates algorithm
+    for (let i = options.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [options[i], options[j]] = [options[j], options[i]];
+    }
+
+    return {
+      questionId: question.question_id,
+      questionText: question.question_text,
+      categoryId: question.category_id,
+      categoryName: question.category_name,
+      imageUrl: question.image_url,
+      audioUrl: question.audio_url,
+      difficulty: question.difficulty || "Medium",
+      correctOptionId: question.correct_option_id,
+      options
+    };
+  });
 
   // Filter out questions that don't have a correct option set OR don't have any options
   const playableQuestions = allQuestions.filter(q => {
@@ -238,6 +268,6 @@ export async function updateQuizStats(quizId: number, playerCount: number, sessi
 
 export async function getAllCategoriesData(): Promise<CategoryDTO[]> {
   const queryStr = `SELECT * FROM quiz_categories ORDER BY category_name ASC`;
-  const result = await db.query<CategoryDTO>(queryStr);
-  return result.rows;
+  const result = await db.query<any>(queryStr);
+  return result.rows.map(mapCategoryToDTO);
 }

@@ -1,14 +1,29 @@
 import * as db from "../database/postgres.database.ts";
 import { QuestionDTO, QuestionCreateInput, QuestionUpdateInput } from "../interfaces/question.interface.ts";
 
+function mapToDTO(row: any): QuestionDTO {
+  return {
+    questionId: row.question_id,
+    questionText: row.question_text,
+    categoryId: row.category_id,
+    categoryName: row.category_name,
+    imageUrl: row.image_url,
+    audioUrl: row.audio_url,
+    difficulty: row.difficulty,
+    correctOptionId: row.correct_option_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
 export async function createQuestionData({ questionText, categoryId, imageUrl, audioUrl, difficulty }: QuestionCreateInput): Promise<QuestionDTO> {
   const queryStr = `
     INSERT INTO quiz_questions (question_text, category_id, image_url, audio_url, difficulty)
     VALUES ($1, $2, $3, $4, $5)
     RETURNING *
   `;
-  const result = await db.query<QuestionDTO>(queryStr, [questionText, categoryId, imageUrl, audioUrl, difficulty]);
-  return result.rows[0];
+  const result = await db.query<any>(queryStr, [questionText, categoryId, imageUrl, audioUrl, difficulty]);
+  return mapToDTO(result.rows[0]);
 }
 
 export async function getQuestionByIdData(questionId: number): Promise<QuestionDTO> {
@@ -18,8 +33,8 @@ export async function getQuestionByIdData(questionId: number): Promise<QuestionD
     LEFT JOIN correct_options co ON qq.question_id = co.question_id
     WHERE qq.question_id = $1
   `;
-  const result = await db.query<QuestionDTO>(queryStr, [questionId]);
-  return result.rows[0];
+  const result = await db.query<any>(queryStr, [questionId]);
+  return mapToDTO(result.rows[0]);
 }
 
 export async function getAllQuestionsData(): Promise<QuestionDTO[]> {
@@ -30,8 +45,8 @@ export async function getAllQuestionsData(): Promise<QuestionDTO[]> {
     LEFT JOIN quiz_categories qc ON qq.category_id = qc.category_id
     ORDER BY qq.created_at DESC
   `;
-  const result = await db.query<QuestionDTO>(queryStr);
-  return result.rows;
+  const result = await db.query<any>(queryStr);
+  return result.rows.map(mapToDTO);
 }
 
 export async function updateQuestionData(questionId: number, { questionText, categoryId, imageUrl, audioUrl, difficulty }: QuestionUpdateInput): Promise<QuestionDTO> {
@@ -46,8 +61,8 @@ export async function updateQuestionData(questionId: number, { questionText, cat
     WHERE question_id = $6
     RETURNING *
   `;
-  const result = await db.query<QuestionDTO>(queryStr, [questionText, categoryId, imageUrl, audioUrl, difficulty, questionId]);
-  return result.rows[0];
+  const result = await db.query<any>(queryStr, [questionText, categoryId, imageUrl, audioUrl, difficulty, questionId]);
+  return mapToDTO(result.rows[0]);
 }
 
 export async function deleteQuestionData(questionId: number): Promise<boolean> {

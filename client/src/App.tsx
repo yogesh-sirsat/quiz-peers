@@ -28,7 +28,7 @@ function App() {
               <li
                 key={index}
                 className=" cursor-pointer"
-                onClick={() => navigate(`/quiz/${quiz.quiz_id}`)}
+                onClick={() => navigate(`/quiz/${quiz.quizId}`)}
               >
                 <QuizInfoCard quizInfo={quiz} />
               </li>

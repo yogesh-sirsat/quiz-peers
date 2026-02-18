@@ -44,7 +44,7 @@ export default function AdminPanel() {
   const navigate = useNavigate();
   const { data: quizzes, isLoading: loadingQuizzes } = useGetAllQuizzesQuery({ onlyValid: false, includeTesting: true });
   const [selectedQuizId, setSelectedQuizId] = useState<number | null>(null);
-  const { data: quizDetails } = useGetQuizByIdQuery(String(selectedQuizId || ""), {
+  const { data: quizDetails } = useGetQuizByIdQuery(Number(selectedQuizId), {
     skip: !selectedQuizId,
   });
 
@@ -60,7 +60,7 @@ export default function AdminPanel() {
   const filteredQuizzes = useMemo(() => {
     if (!quizzes) return [];
     return quizzes.filter(q => 
-        q.quiz_name.toLowerCase().includes(searchQuery.toLowerCase())
+        q.quizName.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [quizzes, searchQuery]);
 
@@ -78,10 +78,10 @@ export default function AdminPanel() {
   const handleOpenEditQuiz = (quiz: QuizDTO) => {
     setQuizModalMode("edit");
     setQuizForm({
-      quizId: Number(quiz.quiz_id),
-      quizName: quiz.quiz_name,
+      quizId: Number(quiz.quizId),
+      quizName: quiz.quizName,
       description: quiz.description || "",
-      coverImageUrl: quiz.cover_image_url || "",
+      coverImageUrl: quiz.coverImageUrl || "",
       status: quiz.status || "draft"
     });
     onQuizModalOpen();
@@ -95,17 +95,17 @@ export default function AdminPanel() {
     try {
       if (quizModalMode === "create") {
         await createQuiz({
-          quiz_name: quizForm.quizName,
+          quizName: quizForm.quizName,
           description: quizForm.description,
-          cover_image_url: quizForm.coverImageUrl,
+          coverImageUrl: quizForm.coverImageUrl,
           status: quizForm.status as any
         }).unwrap();
       } else {
         await updateQuiz({
           quizId: Number(quizForm.quizId),
-          quiz_name: quizForm.quizName,
+          quizName: quizForm.quizName,
           description: quizForm.description,
-          cover_image_url: quizForm.coverImageUrl,
+          coverImageUrl: quizForm.coverImageUrl,
           status: quizForm.status as any
         }).unwrap();
       }
@@ -174,15 +174,15 @@ export default function AdminPanel() {
                 <div className="flex flex-col">
                   {filteredQuizzes?.map((quiz) => (
                     <div
-                      key={quiz.quiz_id}
+                      key={quiz.quizId}
                       className={`p-4 border-b border-default-100 cursor-pointer hover:bg-default-50 flex justify-between items-center transition-all ${
-                        selectedQuizId === Number(quiz.quiz_id) ? "bg-primary-50 dark:bg-primary-900/10 border-l-4 border-l-primary" : ""
+                        selectedQuizId === quiz.quizId ? "bg-primary-50 dark:bg-primary-900/10 border-l-4 border-l-primary" : ""
                       }`}
-                      onClick={() => setSelectedQuizId(Number(quiz.quiz_id))}
+                      onClick={() => setSelectedQuizId(quiz.quizId)}
                     >
                       <div className="flex-1 min-w-0 pr-4">
                         <div className="flex items-center gap-2">
-                            <p className="font-bold truncate text-foreground">{quiz.quiz_name}</p>
+                            <p className="font-bold truncate text-foreground">{quiz.quizName}</p>
                             <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${
                                 quiz.status === 'published' ? 'bg-success/20 text-success' :
                                 quiz.status === 'testing' ? 'bg-warning/20 text-warning' : 'bg-default/20 text-default-600'
@@ -190,7 +190,7 @@ export default function AdminPanel() {
                                 {quiz.status}
                             </span>
                         </div>
-                        <p className="text-xs text-default-600 font-bold uppercase tracking-wider">{quiz.questions_count} Questions</p>
+                        <p className="text-xs text-default-600 font-bold uppercase tracking-wider">{quiz.questionsCount} Questions</p>
                       </div>
                       <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                         <Tooltip content="Edit Quiz Settings" color="foreground">
@@ -210,7 +210,7 @@ export default function AdminPanel() {
                             size="sm"
                             variant="light"
                             color="danger"
-                            onClick={() => handleDeleteQuiz(Number(quiz.quiz_id))}
+                            onClick={() => handleDeleteQuiz(quiz.quizId)}
                           >
                             <Trash2 size={18} />
                           </Button>
@@ -228,13 +228,13 @@ export default function AdminPanel() {
               <div className="flex flex-col h-full w-full overflow-hidden">
                 <CardHeader className="flex justify-between items-center px-6 pt-6 shrink-0">
                   <div className="min-w-0 pr-4">
-                    <h2 className="text-2xl font-bold text-foreground truncate">{quizDetails?.quiz_name || "Loading..."}</h2>
+                    <h2 className="text-2xl font-bold text-foreground truncate">{quizDetails?.quizName || "Loading..."}</h2>
                     <p className="text-medium text-default-600 font-medium mt-1 line-clamp-2">{quizDetails?.description || "No description provided."}</p>
                   </div>
-                  {quizDetails?.cover_image_url && (
+                  {quizDetails?.coverImageUrl && (
                       <div className="shrink-0 h-16 w-24 border rounded-lg overflow-hidden bg-black/5">
                         <img 
-                          src={quizDetails.cover_image_url} 
+                          src={quizDetails.coverImageUrl} 
                           alt="Quiz Cover" 
                           className="h-full w-full object-contain"
                         />
@@ -243,7 +243,7 @@ export default function AdminPanel() {
                 </CardHeader>
                 <Divider className="my-4 mx-6 w-auto" />
                 <CardBody className="px-6 pb-6 overflow-x-hidden">
-                  <QuestionsManager quizId={Number(selectedQuizId)} />
+                  <QuestionsManager quizId={selectedQuizId} />
                 </CardBody>
               </div>
             ) : (

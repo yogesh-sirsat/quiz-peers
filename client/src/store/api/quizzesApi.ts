@@ -94,7 +94,7 @@ export const quizzesApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { questionId }) => [{ type: "OptionDTO", id: `Q-${questionId}` }, "QuizDTO"],
+      invalidatesTags: (_result, _error, { questionId }) => [{ type: "OptionDTO", id: `Q-${questionId}` }, "QuizDTO"],
     }),
     updateOption: builder.mutation<OptionDTO, { optionId: number } & Partial<OptionDTO>>({
       query: ({ optionId, ...body }) => ({
@@ -102,7 +102,7 @@ export const quizzesApi = createApi({
         method: "PATCH",
         body,
       }),
-      invalidatesTags: (result, error, { optionId }) => ["OptionDTO", "QuizDTO"],
+      invalidatesTags: (_result, _error, { _optionId }) => ["OptionDTO", "QuizDTO"],
     }),
     deleteOption: builder.mutation<void, number>({
       query: (optionId) => ({

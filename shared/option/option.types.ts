@@ -1,10 +1,10 @@
 export interface OptionDTO {
-  option_id: number;
-  question_id: number;
-  option_text: string;
-  image_url?: string;
-  audio_url?: string;
-  is_correct?: boolean;
+  optionId: number;
+  questionId: number;
+  optionText: string;
+  imageUrl?: string;
+  audioUrl?: string;
+  isCorrect?: boolean;
 }
 
 export interface OptionCreateInput {

@@ -1,17 +1,17 @@
 import { OptionDTO, QuizOption } from '../option/option.types';
 
 export interface QuestionDTO {
-  question_id: number;
-  question_text: string;
-  quiz_id?: number;
-  category_id?: number;
-  category_name?: string;
-  image_url?: string;
-  audio_url?: string;
+  questionId: number;
+  questionText: string;
+  quizId?: number;
+  categoryId?: number;
+  categoryName?: string;
+  imageUrl?: string;
+  audioUrl?: string;
   difficulty: string;
-  correct_option_id?: number;
-  created_at?: string | Date;
-  updated_at?: string | Date;
+  correctOptionId?: number;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
   options?: OptionDTO[];
 }
 

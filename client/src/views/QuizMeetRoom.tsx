@@ -1,4 +1,4 @@
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@nextui-org/react";
 import NavbarComponent from "../components/ui/Navbar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -19,7 +19,6 @@ import { useQuizWebSocket } from "../hooks/useQuizWebSocket";
 export default function QuizMeetRoom() {
   const dispatch = useDispatch();
   const webSocketUrl = import.meta.env.VITE_WEBSOCKET_URL;
-  const navigate = useNavigate();
   const { quizId, roomId } = useParams<{ quizId: string; roomId: string }>();
   const [searchParams] = useSearchParams();
   const [isRoomPublic, setIsRoomPublic] = useState<boolean>(searchParams.get("public") === "true");
@@ -36,18 +35,15 @@ export default function QuizMeetRoom() {
     totalQuestions,
     questionEndsAt,
     questionDurationMs,
+    correctOptionId,
     leaderboard,
     roundResults,
     topThree,
     skipCount,
+    isAutoPlay,
     isWsConnected,
     roomError,
     sendJson,
-    setQuizStatus,
-    setRoundResults,
-    setCurrentQuestion,
-    setLeaderboard,
-    setTopThree
   } = useQuizWebSocket(roomId, Number(quizId), isRoomPublic, webSocketUrl);
 
   const [isLocalPlayerMute, setIsLocalPlayerMute] = useState<boolean>(true);
@@ -58,11 +54,11 @@ export default function QuizMeetRoom() {
 
   const [timeRemainingMs, setTimeRemainingMs] = useState<number>(0);
   const [hasAnsweredCurrent, setHasAnsweredCurrent] = useState<boolean>(false);
+  const [hasVotedToSkip, setHasVotedToSkip] = useState<boolean>(false);
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
-  const [correctOptionId, setCorrectOptionId] = useState<number | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
 
-  const localStreamRef = useRef<MediaStream>(new MediaStream());
+  const localStreamRef = useRef<HTMLAudioElement>(null);
   const isSpeaking = useAudioActivity(localStream);
   const roomPlayers = useSelector((state: RootState) => state.room.roomPlayers);
 
@@ -91,6 +87,24 @@ export default function QuizMeetRoom() {
     });
   }, [isRoomPublic, roomId, sendJson]);
 
+  const handleToggleAutoPlay = useCallback(() => {
+    const nextAutoPlay = !isAutoPlay;
+    sendJson({
+      event: "toggleAutoPlay",
+      roomId,
+      isRoomPublic,
+      isAutoPlay: nextAutoPlay
+    });
+  }, [isAutoPlay, isRoomPublic, roomId, sendJson]);
+
+  const handleNextQuestion = useCallback(() => {
+    sendJson({
+      event: "nextQuestion",
+      roomId,
+      isRoomPublic
+    });
+  }, [isRoomPublic, roomId, sendJson]);
+
   useEffect(() => {
     const isPublicParams = searchParams.get("public");
     if (isPublicParams) {
@@ -110,9 +124,10 @@ export default function QuizMeetRoom() {
     (async () => {
       try {
         currentLocalStream = await navigator.mediaDevices.getUserMedia(constraints);
-        localStreamRef.current.srcObject = currentLocalStream;
-        // @ts-ignore
-        localStreamRef.current.muted = true;
+        if (localStreamRef.current) {
+          localStreamRef.current.srcObject = currentLocalStream;
+          localStreamRef.current.muted = true;
+        }
         setLocalStream(currentLocalStream);
       } catch (e: any) {
         alert(e.message);
@@ -123,9 +138,8 @@ export default function QuizMeetRoom() {
       if (localStream) {
         localStream.getTracks().forEach((track) => track.stop());
       }
-      localStreamRef.current = new MediaStream();
     };
-  }, [selectedAudioDevice]);
+  }, [selectedAudioDevice, localStream]);
 
   useEffect(() => {
     if (!questionEndsAt || quizStatus !== "playing") {
@@ -172,6 +186,7 @@ export default function QuizMeetRoom() {
   }, [currentQuestion, isRoomPublic, quizStatus, roomId, sendJson]);
 
   const handleSkipTimer = useCallback(() => {
+    setHasVotedToSkip(true);
     sendJson({
       event: "skipTimer",
       roomId,
@@ -233,8 +248,8 @@ export default function QuizMeetRoom() {
   // Handle updates to hasAnsweredCurrent when question changes
   useEffect(() => {
     setHasAnsweredCurrent(false);
+    setHasVotedToSkip(false);
     setSelectedOptionId(null);
-    setCorrectOptionId(null);
   }, [currentQuestion]);
 
   return (
@@ -242,7 +257,7 @@ export default function QuizMeetRoom() {
       <NavbarComponent />
       <article
         className="mt-4 xs:mt-6 mx-3 xs:mx-4 md:mx-auto w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] gap-2 flex flex-col overflow-y-auto">
-        {quizStatus === "waiting" && <QuizNameCard quizId={quizId || ""} />}
+        {quizStatus === "waiting" && <QuizNameCard quizId={Number(quizId)} />}
 
         <section className="mb-6 flex flex-col gap-3 text-foreground bg-background/60 shadow-2xl p-3 xxs:p-4 xs:p-6 rounded-2xl overflow-y-auto">
           <div className="flex flex-row justify-between items-center mb-1 pr-1 gap-2">
@@ -255,14 +270,15 @@ export default function QuizMeetRoom() {
             <div className="flex items-center gap-2">
               {quizStatus === "playing" && hasAnsweredCurrent && correctOptionId === null && (
                 <Button
-                  variant="flat"
-                  color="warning"
+                  variant={hasVotedToSkip ? "solid" : "flat"}
+                  color={hasVotedToSkip ? "success" : "warning"}
                   size="sm"
-                  startContent={<FastForward size={18} />}
+                  startContent={hasVotedToSkip ? <Check size={18} /> : <FastForward size={18} />}
                   onClick={handleSkipTimer}
+                  isDisabled={hasVotedToSkip}
                   className="font-semibold min-w-0 px-3"
                 >
-                  <span className="hidden xs:inline">Skip Timer</span> ({skipCount}/{totalPlayers})
+                  <span className="hidden xs:inline">{hasVotedToSkip ? "Voted" : "Skip Timer"}</span> ({skipCount}/{totalPlayers})
                 </Button>
               )}
               <Button
@@ -309,25 +325,46 @@ export default function QuizMeetRoom() {
                     {isRoomPublic && "Auto-starts when everyone is ready."}
                   </p>
                 </div>
-                <div className="flex gap-2 w-full xs:w-auto">
-                  <Button 
-                    className="flex-1 xs:flex-initial"
-                    color={isReadyToStart ? "secondary" : "success"} 
-                    onClick={handleStartClick} 
-                    isDisabled={!isWsConnected}
-                  >
-                    {isReadyToStart ? "READY" : "Ready Up"}
-                  </Button>
+                <div className="flex flex-col gap-2 w-full xs:w-auto">
                   {!isRoomPublic && isHost && (
+                    <div className="flex items-center justify-between gap-4 bg-background/20 p-2 px-3 rounded-xl border border-background/10 mb-1">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold uppercase opacity-60 leading-none">Progression</span>
+                        <span className="text-xs font-bold whitespace-nowrap">Auto-play</span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="flat" 
+                        isIconOnly
+                        radius="full"
+                        color={isAutoPlay ? "success" : "default"}
+                        onClick={handleToggleAutoPlay}
+                        className="h-6 w-10 min-w-10 text-[10px] font-black"
+                      >
+                        {isAutoPlay ? "ON" : "OFF"}
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
                     <Button 
                       className="flex-1 xs:flex-initial"
-                      color="primary" 
+                      color={isReadyToStart ? "secondary" : "success"} 
                       onClick={handleStartClick} 
                       isDisabled={!isWsConnected}
                     >
-                      Start Quiz
+                      {isReadyToStart ? "READY" : "Ready Up"}
                     </Button>
-                  )}
+                    {!isRoomPublic && isHost && (
+                      <Button 
+                        className="flex-1 xs:flex-initial"
+                        color="primary" 
+                        onClick={handleStartClick} 
+                        isDisabled={!isWsConnected}
+                      >
+                        Start Quiz
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -358,10 +395,10 @@ export default function QuizMeetRoom() {
                 )}
               </div>
             </li>
-            {quizStatus === "waiting" && Object.entries(roomPlayers).map(([key, value], ind) => (
-               key !== localPeerId && (
+            {quizStatus === "waiting" && Object.entries(roomPlayers).map(([key, value]) => (
+               key && key !== "undefined" && key !== localPeerId && (
               <li
-                key={ind}
+                key={key}
                 className="flex flex-row min-w-full gap-2 p-2 h-12 items-center bg-[#39004E] text-background shadow-lg rounded-xl"
               >
                 <Button 
@@ -386,16 +423,17 @@ export default function QuizMeetRoom() {
               questionIndex={questionIndex}
               totalQuestions={totalQuestions}
               timeRemainingMs={timeRemainingMs}
-              questionDurationMs={questionDurationMs}
               timerPercent={timerPercent}
               roundResults={roundResults}
               topThree={topThree}
               localPeerId={localPeerId || ""}
               handleSubmitAnswer={handleSubmitAnswer}
-              hasAnsweredCurrent={hasAnsweredCurrent}
               selectedOptionId={selectedOptionId}
               correctOptionId={correctOptionId}
               setIsLeaderboardOpen={setIsLeaderboardOpen}
+              isAutoPlay={isAutoPlay}
+              isHost={isHost || false}
+              handleNextQuestion={handleNextQuestion}
             />
           )}
         </section>

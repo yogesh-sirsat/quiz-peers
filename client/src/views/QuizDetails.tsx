@@ -64,23 +64,23 @@ export default function QuizDetails() {
             <Image 
               isBlurred 
               isZoomed 
-              src={data?.cover_image_url} 
+              src={data?.coverImageUrl} 
               className="max-h-[360px] max-w-[640px] object-contain rounded-xl"
             />
             <div className="w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] flex flex-col gap-2 pt-4">
-              <h1 className="font-semibold text-2xl xs:text-3xl sm:text-4xl break-words">{data?.quiz_name}</h1>
+              <h1 className="font-semibold text-2xl xs:text-3xl sm:text-4xl break-words">{data?.quizName}</h1>
 
               <p className="text-sm xs:text-base">{data?.description}</p>
               <QuizCategories categories={data?.categories} />
               <p className="text-xs xs:text-sm">
-                Created {dayjs(data?.created_at).fromNow()} | Last updated {dayjs(data?.updated_at).fromNow()}
+                Created {dayjs(data?.createdAt).fromNow()} | Last updated {dayjs(data?.updatedAt).fromNow()}
               </p>
               <br></br>
               <QuizStatsFooter
                 {...{
-                  successRate: data?.success_rate,
-                  contestantsCount: data?.contestants_count || 0,
-                  questionsCount: data?.questions_count || 0
+                  successRate: data?.successRate,
+                  contestantsCount: data?.contestantsCount || 0,
+                  questionsCount: data?.questionsCount || 0
                 }}
               />
               <Divider className="my-2 md:my-4" />
