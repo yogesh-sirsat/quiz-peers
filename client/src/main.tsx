@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import "./index.css";
 import QuizDetails from "./views/QuizDetails";
 import QuizMeetRoom from "./views/QuizMeetRoom";
+import SimilarityQuizSetup from "./views/SimilarityQuizSetup";
 import PageNotFound from "./views/PageNotFound";
 import AdminLogin from "./views/AdminLogin";
 import AdminPanel from "./views/AdminPanel";
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
             <Route path="/" element={<App />} />
             <Route path="/quiz/:quizId" element={<QuizDetails />} />
             <Route path="/quiz/:quizId/:roomId" element={<QuizMeetRoom />} />
+            <Route path="/similarity" element={<SimilarityQuizSetup />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route
               path="/admin"

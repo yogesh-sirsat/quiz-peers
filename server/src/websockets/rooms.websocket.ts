@@ -2,8 +2,10 @@ import { generateRandomRoomId } from "../utils/rooms.utils.ts";
 import { getGeneratePlayerName } from "./players.websocket.ts";
 import HttpError from "../errors/app.error.ts";
 import { getQuizQuestionsForPlay, updateQuizStats } from "../models/quiz.models.ts";
-import { ExtendedWebSocket, WebSocketMessage } from "../interfaces/websocket.interface.ts";
+import { getRandomSimilarityQuestionsData } from "../models/questions.models.ts";
+import { ExtendedWebSocket } from "../interfaces/websocket.interface.ts";
 import { QuizQuestion } from "../interfaces/quiz.interface.ts";
+import { GameMode, SimilaritySessionResult } from "../interfaces/question.interface.ts";
 
 export interface PlayerState {
   ws: ExtendedWebSocket;
@@ -18,6 +20,8 @@ export interface RoomMeta {
   isPublic: boolean;
   hostPeerId: string | null;
   quizId: number | null;
+  mode: GameMode;
+  similarityQuestionCount: number;
   isStarting: boolean;
   isAutoPlay: boolean;
 }
@@ -38,7 +42,8 @@ export interface PlayingRoom {
 
 export interface PlayingSession {
   roomId: string;
-  quizId: number;
+  quizId: number | null;
+  mode: GameMode;
   isRoomPublic: boolean;
   isAutoPlay: boolean;
   questions: QuizQuestion[];
@@ -52,6 +57,7 @@ export interface PlayingSession {
   sessionTotalCorrect: number;
   sessionTotalPossible: number;
   currentAnswers: Map<string, { optionId: number; submittedAt: number }>;
+  answerHistory: Map<number, Map<string, number | null>>;
   skipTimerVotes: Set<string>;
   questionDurationMs: number;
   interQuestionDelayMs: number;
@@ -65,12 +71,14 @@ export const privatePlayingRooms = new Map<string, PlayingSession>();
 const QUESTION_DURATION_MS = 15000;
 const INTER_QUESTION_DELAY_MS = 3500;
 
-function createWaitingRoomState(isPublic: boolean): WaitingRoom {
+function createWaitingRoomState(isPublic: boolean, mode: GameMode = "TRIVIA", similarityQuestionCount = 10): WaitingRoom {
   const room = new Map<string, PlayerState>() as WaitingRoom;
   room.meta = {
     isPublic,
     hostPeerId: null,
     quizId: null,
+    mode,
+    similarityQuestionCount: Math.max(1, Math.min(20, similarityQuestionCount || 10)),
     isStarting: false,
     isAutoPlay: false
   };
@@ -109,6 +117,159 @@ function getLeaderboard(session: PlayingSession): LeaderboardEntry[] {
   })).sort((a, b) => b.score - a.score);
 }
 
+function getSessionLeaderboard(session: PlayingSession): LeaderboardEntry[] {
+  if (session.mode === "SIMILARITY") {
+    return [];
+  }
+  return getLeaderboard(session);
+}
+
+function computeSimilarityInsights(session: PlayingSession): SimilaritySessionResult {
+  const players = Array.from(session.players, ([peerId, player]) => ({
+    peerId,
+    playerName: player.playerName
+  }));
+
+  const pairwise: SimilaritySessionResult["pairwise"] = [];
+  const perPlayerSimilarity: SimilaritySessionResult["perPlayerSimilarity"] = {};
+
+  players.forEach((player) => {
+    perPlayerSimilarity[player.peerId] = [];
+  });
+
+  for (let i = 0; i < players.length; i++) {
+    for (let j = i + 1; j < players.length; j++) {
+      const playerA = players[i];
+      const playerB = players[j];
+      let similarityCount = 0;
+
+      session.answerHistory.forEach((answersForQuestion) => {
+        const a = answersForQuestion.get(playerA.peerId);
+        const b = answersForQuestion.get(playerB.peerId);
+        if (a !== null && a !== undefined && b !== null && b !== undefined && a === b) {
+          similarityCount += 1;
+        }
+      });
+
+      pairwise.push({
+        playerAId: playerA.peerId,
+        playerAName: playerA.playerName,
+        playerBId: playerB.peerId,
+        playerBName: playerB.playerName,
+        similarityCount
+      });
+
+      perPlayerSimilarity[playerA.peerId].push({
+        peerId: playerB.peerId,
+        playerName: playerB.playerName,
+        similarityCount
+      });
+      perPlayerSimilarity[playerB.peerId].push({
+        peerId: playerA.peerId,
+        playerName: playerA.playerName,
+        similarityCount
+      });
+    }
+  }
+
+  Object.values(perPlayerSimilarity).forEach((rankings) => {
+    rankings.sort((a, b) => b.similarityCount - a.similarityCount);
+  });
+
+  const pairwiseSorted = [...pairwise].sort((a, b) => b.similarityCount - a.similarityCount);
+  const soulmate = pairwiseSorted.length ? pairwiseSorted[0] : null;
+
+  const popularityCounter = new Map<string, number>();
+  const chaosCounter = new Map<string, number>();
+
+  session.players.forEach((_p, peerId) => {
+    popularityCounter.set(peerId, 0);
+    chaosCounter.set(peerId, 0);
+  });
+
+  const questionBreakdown: SimilaritySessionResult["questionBreakdown"] = session.questions.map((question) => {
+    const answersForQuestion = session.answerHistory.get(question.questionId) || new Map<string, number | null>();
+    const optionCounts = new Map<number, number>();
+
+    answersForQuestion.forEach((optionId) => {
+      if (optionId !== null && optionId !== undefined) {
+        optionCounts.set(optionId, (optionCounts.get(optionId) || 0) + 1);
+      }
+    });
+
+    const maxCount = Array.from(optionCounts.values()).reduce((acc, val) => Math.max(acc, val), 0);
+    const majorityOptionIds = new Set<number>();
+    if (maxCount > 0) {
+      optionCounts.forEach((count, optionId) => {
+        if (count === maxCount) {
+          majorityOptionIds.add(optionId);
+        }
+      });
+    }
+
+    const options = question.options.map((option) => {
+      const playersForOption = players.filter((player) => answersForQuestion.get(player.peerId) === option.optionId);
+
+      if (majorityOptionIds.has(option.optionId)) {
+        playersForOption.forEach((p) => {
+          popularityCounter.set(p.peerId, (popularityCounter.get(p.peerId) || 0) + 1);
+        });
+      }
+
+      if (playersForOption.length === 1) {
+        const uniquePlayer = playersForOption[0];
+        chaosCounter.set(uniquePlayer.peerId, (chaosCounter.get(uniquePlayer.peerId) || 0) + 1);
+      }
+
+      return {
+        optionId: option.optionId,
+        optionText: option.optionText,
+        imageUrl: option.imageUrl,
+        audioUrl: option.audioUrl,
+        players: playersForOption.map((p) => ({ peerId: p.peerId, playerName: p.playerName }))
+      };
+    });
+
+    return {
+      questionId: question.questionId,
+      questionText: question.questionText,
+      options
+    };
+  });
+
+  const loneWolf = players.length <= 1
+    ? null
+    : players
+        .map((player) => {
+          const entries = perPlayerSimilarity[player.peerId] || [];
+          const averageSimilarity = entries.length
+            ? entries.reduce((sum, entry) => sum + entry.similarityCount, 0) / entries.length
+            : 0;
+          return { peerId: player.peerId, playerName: player.playerName, averageSimilarity };
+        })
+        .sort((a, b) => a.averageSimilarity - b.averageSimilarity)[0];
+
+  const mostPopularPicker = players
+    .map((player) => ({ peerId: player.peerId, playerName: player.playerName, count: popularityCounter.get(player.peerId) || 0 }))
+    .sort((a, b) => b.count - a.count)[0] || null;
+
+  const chaosPicker = players
+    .map((player) => ({ peerId: player.peerId, playerName: player.playerName, count: chaosCounter.get(player.peerId) || 0 }))
+    .sort((a, b) => b.count - a.count)[0] || null;
+
+  return {
+    pairwise: pairwiseSorted,
+    publicStats: {
+      loneWolf,
+      soulmate,
+      mostPopularPicker,
+      chaosPicker
+    },
+    questionBreakdown,
+    perPlayerSimilarity
+  };
+}
+
 function safeSend(ws: ExtendedWebSocket | undefined, payload: any): void {
   try {
     ws?.send(JSON.stringify(payload));
@@ -137,7 +298,9 @@ function getWaitingRoomStatePayload(room: WaitingRoom, roomId: string): any {
     readyPeerIds,
     totalPlayers: roomPlayers.length,
     hostPeerId: room.meta?.hostPeerId || null,
-    isAutoPlay: room.meta?.isAutoPlay ?? true
+    isAutoPlay: room.meta?.isAutoPlay ?? true,
+    mode: room.meta?.mode || "TRIVIA",
+    similarityQuestionCount: room.meta?.similarityQuestionCount || 10
   };
 }
 
@@ -173,14 +336,33 @@ function beginNextQuestion(session: PlayingSession): void {
   session.currentQuestionIndex += 1;
 
   if (session.currentQuestionIndex >= session.questions.length) {
-    const leaderboard = getLeaderboard(session);
-    broadcastPlayers(session.players, {
+    const leaderboard = getSessionLeaderboard(session);
+    const payload: any = {
       event: "quizFinished",
+      mode: session.mode,
       leaderboard,
       topThree: leaderboard.slice(0, 3)
-    });
+    };
 
-    if (process.env.NODE_ENV !== "development") {
+    if (session.mode === "SIMILARITY") {
+      const fullResult = computeSimilarityInsights(session);
+      session.players.forEach((player, peerId) => {
+        const privateResult: SimilaritySessionResult = {
+          ...fullResult,
+          perPlayerSimilarity: {
+            [peerId]: fullResult.perPlayerSimilarity[peerId] || []
+          }
+        };
+        safeSend(player.ws, {
+          ...payload,
+          similarityResult: privateResult
+        });
+      });
+    } else {
+      broadcastPlayers(session.players, payload);
+    }
+
+    if (process.env.NODE_ENV !== "development" && session.mode === "TRIVIA" && session.quizId) {
       const totalPossible = session.sessionTotalPossible || 1; // avoid division by zero
       const successRate = (session.sessionTotalCorrect / totalPossible) * 100;
       updateQuizStats(session.quizId, session.players.size, successRate)
@@ -202,6 +384,7 @@ function beginNextQuestion(session: PlayingSession): void {
 
   broadcastPlayers(session.players, {
     event: "quizQuestion",
+    mode: session.mode,
     questionIndex: session.currentQuestionIndex,
     totalQuestions: session.questions.length,
     questionDurationMs: session.questionDurationMs,
@@ -215,7 +398,7 @@ function beginNextQuestion(session: PlayingSession): void {
       difficulty: currentQuestion.difficulty,
       options: currentQuestion.options
     },
-    leaderboard: getLeaderboard(session)
+    leaderboard: getSessionLeaderboard(session)
   });
 }
 
@@ -232,43 +415,66 @@ function finalizeCurrentQuestion(roomId: string, isRoomPublic: boolean): void {
   const currentQuestion = session.questions[session.currentQuestionIndex];
   const roundResults: any[] = [];
 
-  session.sessionTotalPossible += session.players.size;
+  const answersForQuestion = new Map<string, number | null>();
 
-  session.players.forEach((player, peerId) => {
-    const answer = session.currentAnswers.get(peerId);
-    const selectedOptionId = answer?.optionId ?? null;
-    const isCorrect = selectedOptionId === currentQuestion.correctOptionId;
-    let pointsAwarded = 0;
-    let speedBonus = 0;
+  if (session.mode === "TRIVIA") {
+    session.sessionTotalPossible += session.players.size;
 
-    if (isCorrect && answer && session.questionStartedAt !== null) {
-      session.sessionTotalCorrect += 1;
-      const basePoints = getBasePointsForDifficulty(currentQuestion.difficulty);
-      const elapsedMs = Math.max(0, Math.min(session.questionDurationMs, answer.submittedAt - session.questionStartedAt));
-      const remainingRatio = Math.max(0, (session.questionDurationMs - elapsedMs) / session.questionDurationMs);
-      // Diminishing-return utility bonus: reward speed without making late-correct answers worthless.
-      speedBonus = Math.round(basePoints * 0.9 * Math.log2(1 + remainingRatio));
-      pointsAwarded = basePoints + speedBonus;
-      player.score += pointsAwarded;
-    }
+    session.players.forEach((player, peerId) => {
+      const answer = session.currentAnswers.get(peerId);
+      const selectedOptionId = answer?.optionId ?? null;
+      const isCorrect = selectedOptionId === currentQuestion.correctOptionId;
+      let pointsAwarded = 0;
+      let speedBonus = 0;
 
-    roundResults.push({
-      peerId,
-      playerName: player.playerName,
-      selectedOptionId,
-      isCorrect,
-      pointsAwarded,
-      speedBonus,
-      totalScore: player.score
+      if (isCorrect && answer && session.questionStartedAt !== null) {
+        session.sessionTotalCorrect += 1;
+        const basePoints = getBasePointsForDifficulty(currentQuestion.difficulty);
+        const elapsedMs = Math.max(0, Math.min(session.questionDurationMs, answer.submittedAt - session.questionStartedAt));
+        const remainingRatio = Math.max(0, (session.questionDurationMs - elapsedMs) / session.questionDurationMs);
+        // Diminishing-return utility bonus: reward speed without making late-correct answers worthless.
+        speedBonus = Math.round(basePoints * 0.9 * Math.log2(1 + remainingRatio));
+        pointsAwarded = basePoints + speedBonus;
+        player.score += pointsAwarded;
+      }
+
+      answersForQuestion.set(peerId, selectedOptionId);
+      roundResults.push({
+        peerId,
+        playerName: player.playerName,
+        selectedOptionId,
+        isCorrect,
+        pointsAwarded,
+        speedBonus,
+        totalScore: player.score
+      });
     });
-  });
+  } else {
+    session.players.forEach((player, peerId) => {
+      const answer = session.currentAnswers.get(peerId);
+      const selectedOptionId = answer?.optionId ?? null;
+      answersForQuestion.set(peerId, selectedOptionId);
+      roundResults.push({
+        peerId,
+        playerName: player.playerName,
+        selectedOptionId,
+        isCorrect: null,
+        pointsAwarded: 0,
+        speedBonus: 0,
+        totalScore: 0
+      });
+    });
+  }
+
+  session.answerHistory.set(currentQuestion.questionId, answersForQuestion);
 
   broadcastPlayers(session.players, {
     event: "questionResult",
+    mode: session.mode,
     questionIndex: session.currentQuestionIndex,
-    correctOptionId: currentQuestion.correctOptionId,
+    correctOptionId: session.mode === "TRIVIA" ? currentQuestion.correctOptionId : null,
     results: roundResults,
-    leaderboard: getLeaderboard(session),
+    leaderboard: getSessionLeaderboard(session),
     nextQuestionInMs: session.isAutoPlay ? session.interQuestionDelayMs : 0,
     isAutoPlay: session.isAutoPlay
   });
@@ -293,15 +499,24 @@ async function startQuiz(roomId: string, isRoomPublic: boolean): Promise<void> {
   waitingRoom.meta.isStarting = true;
 
   try {
-    const quizId = waitingRoom.meta?.quizId;
-    if (quizId === null || quizId === undefined) {
-      throw new Error("Quiz ID not found in room meta.");
+    const mode = waitingRoom.meta?.mode || "TRIVIA";
+    const quizId = waitingRoom.meta?.quizId ?? null;
+    let questions: QuizQuestion[] = [];
+
+    if (mode === "SIMILARITY") {
+      const count = waitingRoom.meta?.similarityQuestionCount || 10;
+      console.log(`startQuiz: Fetching ${count} random SIMILARITY questions`);
+      questions = await getRandomSimilarityQuestionsData(count) as QuizQuestion[];
+    } else {
+      if (quizId === null || quizId === undefined) {
+        throw new Error("Quiz ID not found in room meta.");
+      }
+      console.log(`startQuiz: Fetching questions for quiz ${quizId}`);
+      questions = await getQuizQuestionsForPlay(quizId);
     }
-    console.log(`startQuiz: Fetching questions for quiz ${quizId}`);
-    const questions = await getQuizQuestionsForPlay(quizId);
 
     if (!questions.length) {
-      console.warn(`startQuiz: Quiz ${quizId} has no playable questions.`);
+      console.warn(`startQuiz: Session has no playable questions for mode ${mode}.`);
       broadcastPlayers(waitingRoom, {
         event: "quizStartFailed",
         message: "Quiz has no playable questions."
@@ -322,12 +537,14 @@ async function startQuiz(roomId: string, isRoomPublic: boolean): Promise<void> {
     const session: PlayingSession = {
       roomId,
       quizId,
+      mode,
       isRoomPublic,
       isAutoPlay: waitingRoom.meta.isAutoPlay,
       players,
       questions,
       currentQuestionIndex: -1,
       currentAnswers: new Map(),
+      answerHistory: new Map(),
       questionDurationMs: QUESTION_DURATION_MS,
       interQuestionDelayMs: INTER_QUESTION_DELAY_MS,
       questionStartedAt: null,
@@ -350,6 +567,7 @@ async function startQuiz(roomId: string, isRoomPublic: boolean): Promise<void> {
     broadcastPlayers(players, {
       event: "quizStarted",
       roomId,
+      mode,
       totalQuestions: questions.length
     });
 
@@ -494,7 +712,8 @@ export function handleLeaveWaitingRoom(ws: ExtendedWebSocket): void {
         event: "playerLeftPlayingRoom",
         peerId: ws.playerId,
         playerName: ws.playerName,
-        leaderboard: getLeaderboard(session)
+        mode: session.mode,
+        leaderboard: getSessionLeaderboard(session)
       });
 
       if (session.players.size === 0) {
@@ -606,9 +825,16 @@ export function handleJoinRoom(ws: ExtendedWebSocket, data: any): void {
     if (!room) {
       throw new Error("Oops, Room not found!");
     }
-    room.meta.quizId = room.meta.quizId || data?.quizId;
-    if (!room.meta.quizId) {
-      room.meta.quizId = data?.quizId;
+    if (!room.meta.quizId && data?.quizId) {
+      room.meta.quizId = Number(data?.quizId);
+    }
+
+    if (data?.mode === "SIMILARITY" || data?.mode === "TRIVIA") {
+      room.meta.mode = data.mode;
+    }
+
+    if (data?.similarityQuestionCount) {
+      room.meta.similarityQuestionCount = Math.max(1, Math.min(20, Number(data?.similarityQuestionCount)));
     }
 
     const playerName = getGeneratePlayerName(room);
@@ -624,6 +850,8 @@ export function handleJoinRoom(ws: ExtendedWebSocket, data: any): void {
       playerName,
       isHost: room.meta?.hostPeerId === data?.peerId,
       hostPeerId: room.meta?.hostPeerId,
+      mode: room.meta?.mode || "TRIVIA",
+      similarityQuestionCount: room.meta?.similarityQuestionCount || 10,
       roomPlayers: Array.from(room, ([key, value]) => ({
         peerId: key,
         playerName: value?.playerName,
@@ -657,14 +885,19 @@ export function isRoomIdInUse(roomId: string): boolean {
   return (publicWaitingRooms.has(roomId) || privateWaitingRooms.has(roomId) || publicPlayingRooms.has(roomId) || privatePlayingRooms.has(roomId));
 }
 
-export function getValidGeneratedRoomId(isPublic: boolean = true, quizId: any = null): string {
+export function getValidGeneratedRoomId(
+  isPublic: boolean = true,
+  quizId: any = null,
+  mode: GameMode = "TRIVIA",
+  similarityQuestionCount = 10
+): string {
   // Try 1 lackh times to find a room id that is not in use.
   let tries = 0;
   const lackh = 100000;
   while (tries < lackh) {
     const roomId = generateRandomRoomId();
     if (!isRoomIdInUse(roomId)) {
-      const roomState = createWaitingRoomState(isPublic);
+      const roomState = createWaitingRoomState(isPublic, mode, similarityQuestionCount);
       roomState.meta.quizId = quizId ? Number(quizId) : null;
       if (isPublic) {
         publicWaitingRooms.set(roomId, roomState);
@@ -682,13 +915,19 @@ export function getValidGeneratedRoomId(isPublic: boolean = true, quizId: any = 
   throw new HttpError("Could not create a private room, please try again!", 404);
 }
 
-export function getValidPublicRoomId(quizId: any = null): string {
+export function getValidPublicRoomId(
+  quizId: any = null,
+  mode: GameMode = "TRIVIA",
+  similarityQuestionCount = 10
+): string {
   const qId = quizId ? Number(quizId) : null;
   for (const [key, value] of publicWaitingRooms) {
-    if (value.size < 10 && (value.meta.quizId === qId || !value.meta.quizId)) {
+    const modeMatches = value.meta.mode === mode;
+    const quizMatches = mode === "SIMILARITY" ? true : (value.meta.quizId === qId || !value.meta.quizId);
+    if (value.size < 10 && modeMatches && quizMatches) {
       if (!value.meta.quizId) value.meta.quizId = qId;
       return key;
     }
   }
-  return getValidGeneratedRoomId(true, qId);
+  return getValidGeneratedRoomId(true, qId, mode, similarityQuestionCount);
 }

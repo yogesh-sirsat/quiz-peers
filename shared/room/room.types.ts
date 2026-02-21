@@ -1,14 +1,17 @@
-import { Quiz } from '../quiz/quiz.types';
+import { QuizDTO } from '../quiz/quiz.types';
+import { GameMode } from '../question/question.types';
 
 export interface Room {
   room_id: string;
-  quiz_id: number;
+  quiz_id: number | null;
+  mode?: GameMode;
+  similarityQuestionCount?: number;
   room_type?: 'public' | 'private';
   created_at?: string | Date;
 }
 
 export interface RoomDetails extends Room {
-  quiz: Quiz;
+  quiz: QuizDTO;
 }
 
 export interface ChatMessage {

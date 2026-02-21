@@ -256,6 +256,21 @@ export default function AdminPanel() {
             )}
           </Card>
         </div>
+
+        <Card className="shadow-2xl border-none mt-6">
+          <CardHeader className="px-6 pt-6 pb-2">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Similarity Question Bank</h2>
+              <p className="text-medium text-default-600 font-medium mt-1">
+                Create standalone SIMILARITY questions with options (no quiz link, no correct answer).
+              </p>
+            </div>
+          </CardHeader>
+          <Divider className="my-4 mx-6 w-auto" />
+          <CardBody className="px-6 pb-6 overflow-x-hidden">
+            <QuestionsManager questionType="SIMILARITY" />
+          </CardBody>
+        </Card>
       </div>
 
       <Modal 

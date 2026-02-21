@@ -1,10 +1,19 @@
 import { Request, Response, NextFunction } from "express";
 import { getRoomDetails, getValidGeneratedRoomId, getValidPublicRoomId } from "../websockets/rooms.websocket.ts";
+import { GameMode } from "../interfaces/question.interface.ts";
+
+function normalizeMode(mode: unknown): GameMode {
+  return mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA";
+}
 
 export async function getPublicRoomId(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { quizId } = req.query;
-    const publicRoomId = getValidPublicRoomId(quizId as string);
+    const { quizId, mode, similarityQuestionCount } = req.query;
+    const publicRoomId = getValidPublicRoomId(
+      quizId as string,
+      normalizeMode(mode),
+      Number(similarityQuestionCount || 10)
+    );
     res.send({ roomId: publicRoomId });
   } catch (error) {
     next(error);
@@ -13,8 +22,13 @@ export async function getPublicRoomId(req: Request, res: Response, next: NextFun
 
 export async function getIdForPrivateRoom(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { quizId } = req.query;
-    const privateRoomId = getValidGeneratedRoomId(false, quizId as string);
+    const { quizId, mode, similarityQuestionCount } = req.query;
+    const privateRoomId = getValidGeneratedRoomId(
+      false,
+      quizId as string,
+      normalizeMode(mode),
+      Number(similarityQuestionCount || 10)
+    );
     res.send({ roomId: privateRoomId });
   } catch (error) {
     next(error);

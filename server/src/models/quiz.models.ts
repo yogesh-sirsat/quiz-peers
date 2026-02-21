@@ -1,4 +1,5 @@
 import * as db from "../database/postgres.database.ts";
+import { CategoryDTO, QuizCreateInput, QuizDTO, QuizQuestion, QuizUpdateInput } from "../interfaces/quiz.interface.ts";
 function mapQuizToDTO(row: any): QuizDTO {
   return {
     quizId: row.quiz_id,
@@ -167,6 +168,7 @@ export async function getQuizQuestionsForPlay(quizId: number): Promise<QuizQuest
       qq.image_url,
       qq.audio_url,
       qq.difficulty,
+      qq.qtype,
       co.correct_option_id
     FROM
       quiz_question_relationships qqr
@@ -174,7 +176,7 @@ export async function getQuizQuestionsForPlay(quizId: number): Promise<QuizQuest
       LEFT JOIN quiz_categories qc ON qq.category_id = qc.category_id
       LEFT JOIN correct_options co ON qq.question_id = co.question_id
     WHERE
-      qqr.quiz_id = $1
+      qqr.quiz_id = $1 AND qq.qtype = 'TRIVIA'
     ORDER BY
       qq.question_id ASC
   `;
@@ -230,6 +232,7 @@ export async function getQuizQuestionsForPlay(quizId: number): Promise<QuizQuest
       imageUrl: question.image_url,
       audioUrl: question.audio_url,
       difficulty: question.difficulty || "Medium",
+      qtype: question.qtype,
       correctOptionId: question.correct_option_id,
       options
     };

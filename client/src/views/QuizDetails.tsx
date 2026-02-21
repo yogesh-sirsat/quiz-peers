@@ -24,7 +24,7 @@ export default function QuizDetails() {
   const handleJoinPublic = async () => {
     if (!quizId) return;
     try {
-      const response: any = await triggerPublicRoomId(Number(quizId));
+      const response: any = await triggerPublicRoomId({ quizId: Number(quizId), mode: "TRIVIA" });
       if (response.isError) {
         throw new Error(response.error?.data?.message);
       }
@@ -39,7 +39,7 @@ export default function QuizDetails() {
   const handleCreatePrivate = async () => {
     if (!quizId) return;
     try {
-      const response: any = await triggerPrivateRoomId(Number(quizId));
+      const response: any = await triggerPrivateRoomId({ quizId: Number(quizId), mode: "TRIVIA" });
       if (response.isError) {
         throw new Error(response.error?.data?.message);
       }

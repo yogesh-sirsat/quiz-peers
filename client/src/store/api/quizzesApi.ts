@@ -102,7 +102,7 @@ export const quizzesApi = createApi({
         method: "PATCH",
         body,
       }),
-      invalidatesTags: (_result, _error, { _optionId }) => ["OptionDTO", "QuizDTO"],
+      invalidatesTags: () => ["OptionDTO", "QuizDTO"],
     }),
     deleteOption: builder.mutation<void, number>({
       query: (optionId) => ({
