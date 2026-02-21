@@ -6,6 +6,7 @@ LIMIT
 
 CREATE TYPE difficulty_level AS ENUM ('Easy', 'Medium', 'Hard');
 CREATE TYPE quiz_status AS ENUM ('draft', 'published', 'testing');
+CREATE TYPE question_type AS ENUM ("TRIVIA", "SIMILARITY", "MAJORITY");
 
 CREATE TABLE
     quiz_categories (
@@ -55,6 +56,7 @@ CREATE TABLE
         image_url VARCHAR(255),
         audio_url VARCHAR(255),
         difficulty difficulty_level,
+        qtype question_type DEFAULT 'TRIVIA',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (category_id) REFERENCES quiz_categories (category_id) ON DELETE SET NULL,

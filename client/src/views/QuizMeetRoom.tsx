@@ -271,14 +271,14 @@ export default function QuizMeetRoom() {
               {quizStatus === "playing" && hasAnsweredCurrent && correctOptionId === null && (
                 <Button
                   variant={hasVotedToSkip ? "solid" : "flat"}
-                  color={hasVotedToSkip ? "success" : "warning"}
+                  color={"warning"}
                   size="sm"
                   startContent={hasVotedToSkip ? <Check size={18} /> : <FastForward size={18} />}
                   onClick={handleSkipTimer}
                   isDisabled={hasVotedToSkip}
                   className="font-semibold min-w-0 px-3"
                 >
-                  <span className="hidden xs:inline">{hasVotedToSkip ? "Voted" : "Skip Timer"}</span> ({skipCount}/{totalPlayers})
+                  <span className="hidden xs:inline">{hasVotedToSkip ? "Skipped" : "Skip Timer"}</span> ({skipCount}/{totalPlayers})
                 </Button>
               )}
               <Button
