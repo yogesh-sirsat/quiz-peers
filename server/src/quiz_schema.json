@@ -28,6 +28,10 @@
             "type": "string",
             "enum": ["Easy", "Medium", "Hard"]
           },
+           "qtype": {
+            "type": "string",
+            "enum": ["TRIVIA", "SIMILARITY", "MAJORITY"]
+          },
           "categoryId": {
             "type": "integer",
             "description": "ID of the category (e.g., 1 for Anime, 15 for Programming)"
