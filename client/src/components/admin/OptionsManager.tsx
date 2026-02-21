@@ -25,9 +25,10 @@ import { FileUpload } from "./FileUpload";
 interface OptionsManagerProps {
     questionId: number;
     correctOptionId?: number;
+    canSetCorrect?: boolean;
 }
 
-export function OptionsManager({ questionId, correctOptionId }: OptionsManagerProps) {
+export function OptionsManager({ questionId, correctOptionId, canSetCorrect = true }: OptionsManagerProps) {
   const { data: options, isLoading } = useGetOptionsByQuestionIdQuery(questionId);
   const [createOption] = useCreateOptionMutation();
   const [updateOption] = useUpdateOptionMutation();
@@ -115,18 +116,24 @@ export function OptionsManager({ questionId, correctOptionId }: OptionsManagerPr
           >
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3 min-w-0">
-                    <Tooltip content={Number(correctOptionId) === Number(opt.optionId) ? "Correct Answer" : "Mark as Correct"} color="foreground">
-                        <div 
-                            className="cursor-pointer group shrink-0"
-                            onClick={() => setCorrectOption({ questionId: Number(questionId), optionId: Number(opt.optionId) })}
-                        >
-                            {Number(correctOptionId) === Number(opt.optionId) ? (
-                                <CheckCircle2 size={24} className="text-success fill-success/10" />
-                            ) : (
-                                <Circle size={24} className="text-default-400 group-hover:text-primary transition-colors" />
-                            )}
-                        </div>
-                    </Tooltip>
+                    {canSetCorrect ? (
+                      <Tooltip content={Number(correctOptionId) === Number(opt.optionId) ? "Correct Answer" : "Mark as Correct"} color="foreground">
+                          <div 
+                              className="cursor-pointer group shrink-0"
+                              onClick={() => setCorrectOption({ questionId: Number(questionId), optionId: Number(opt.optionId) })}
+                          >
+                              {Number(correctOptionId) === Number(opt.optionId) ? (
+                                  <CheckCircle2 size={24} className="text-success fill-success/10" />
+                              ) : (
+                                  <Circle size={24} className="text-default-400 group-hover:text-primary transition-colors" />
+                              )}
+                          </div>
+                      </Tooltip>
+                    ) : (
+                      <div className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-full bg-secondary/20 text-secondary">
+                        Similarity
+                      </div>
+                    )}
                     <span className={`font-bold text-sm truncate ${Number(correctOptionId) === Number(opt.optionId) ? "text-success-800" : "text-foreground"}`}>
                         {opt.optionText || "Image/Audio Answer"}
                     </span>

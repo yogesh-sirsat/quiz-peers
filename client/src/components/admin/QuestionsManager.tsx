@@ -22,20 +22,28 @@ import {
   useUpdateQuestionMutation,
   useDeleteQuestionMutation,
   useGetQuizQuestionsQuery,
+  useGetAllQuestionsQuery,
   useRemoveQuestionFromQuizMutation,
   useGetAllCategoriesQuery,
 } from "../../store/api/quizzesApi";
-import { QuizQuestion } from "../../types";
+import { CategoryDTO, QuestionDTO, QuestionType, QuizQuestion } from "../../types";
 import { MediaPreview } from "./MediaPreview";
 import { FileUpload } from "./FileUpload";
 import { OptionsManager } from "./OptionsManager";
 
 interface QuestionsManagerProps {
-    quizId: number;
+    quizId?: number;
+    questionType?: QuestionType;
 }
 
-export function QuestionsManager({ quizId }: QuestionsManagerProps) {
-  const { data: questions, isLoading } = useGetQuizQuestionsQuery(quizId);
+export function QuestionsManager({ quizId, questionType = "TRIVIA" }: QuestionsManagerProps) {
+  const isSimilarity = questionType === "SIMILARITY";
+  const { data: quizQuestions, isLoading: isQuizQuestionsLoading } = useGetQuizQuestionsQuery(Number(quizId), {
+    skip: !quizId || isSimilarity
+  } as any);
+  const { data: allQuestions, isLoading: isAllQuestionsLoading } = useGetAllQuestionsQuery(undefined, {
+    skip: !isSimilarity
+  } as any);
   const { data: categories } = useGetAllCategoriesQuery();
   const [createQuestion] = useCreateQuestionMutation();
   const [updateQuestion] = useUpdateQuestionMutation();
@@ -53,13 +61,18 @@ export function QuestionsManager({ quizId }: QuestionsManagerProps) {
     difficulty: "Medium" 
   });
 
+  const questions: (QuizQuestion | QuestionDTO)[] = isSimilarity
+    ? ((allQuestions || []).filter((q: QuestionDTO) => q.qtype === "SIMILARITY"))
+    : (quizQuestions || []);
+  const isLoading = isSimilarity ? isAllQuestionsLoading : isQuizQuestionsLoading;
+
   const handleOpenCreate = () => {
     setModalMode("create");
     setForm({ questionId: "", questionText: "", categoryId: "", imageUrl: "", audioUrl: "", difficulty: "Medium" });
     onOpen();
   };
 
-  const handleOpenEdit = (q: QuizQuestion) => {
+  const handleOpenEdit = (q: QuizQuestion | QuestionDTO) => {
     setModalMode("edit");
     setForm({
       questionId: String(q.questionId),
@@ -75,9 +88,9 @@ export function QuestionsManager({ quizId }: QuestionsManagerProps) {
   const handleSubmit = async () => {
     try {
       if (modalMode === "create") {
-        await createQuestion({ ...form, quizId: Number(quizId) } as any).unwrap();
+        await createQuestion({ ...form, qtype: questionType, ...(quizId ? { quizId: Number(quizId) } : {}) } as any).unwrap();
       } else {
-        await updateQuestion({ ...form, questionId: Number(form.questionId) } as any).unwrap();
+        await updateQuestion({ ...form, qtype: questionType, questionId: Number(form.questionId) } as any).unwrap();
       }
       onClose();
     } catch (err: any) {
@@ -141,26 +154,28 @@ export function QuestionsManager({ quizId }: QuestionsManagerProps) {
             >
               <div className="flex flex-col gap-6">
                 <MediaPreview imageUrl={q.imageUrl} audioUrl={q.audioUrl} />
-                <OptionsManager questionId={q.questionId} correctOptionId={q.correctOptionId} />
+                <OptionsManager questionId={q.questionId} correctOptionId={q.correctOptionId} canSetCorrect={!isSimilarity} />
                 
                 <Divider />
                 <div className="flex flex-col xs:flex-row justify-between items-stretch xs:items-center bg-default-50 p-4 gap-4">
-                    <Tooltip content="Remove from this quiz only" color="foreground">
-                        <Button 
-                            size="md" 
-                            color="warning" 
-                            variant="flat" 
-                            startContent={<X size={18} />} 
-                            onClick={() => {
-                                if(window.confirm("Remove this question from this quiz?")) {
-                                    removeQuestionFromQuiz({ quizId: Number(quizId), questionId: Number(q.questionId) });
-                                }
-                            }}
-                            className="font-bold flex-1 xs:flex-initial"
-                        >
-                            Remove from Quiz
-                        </Button>
-                    </Tooltip>
+                    {!isSimilarity && quizId && (
+                      <Tooltip content="Remove from this quiz only" color="foreground">
+                          <Button 
+                              size="md" 
+                              color="warning" 
+                              variant="flat" 
+                              startContent={<X size={18} />} 
+                              onClick={() => {
+                                  if(window.confirm("Remove this question from this quiz?")) {
+                                      removeQuestionFromQuiz({ quizId: Number(quizId), questionId: Number(q.questionId) });
+                                  }
+                              }}
+                              className="font-bold flex-1 xs:flex-initial"
+                          >
+                              Remove from Quiz
+                          </Button>
+                      </Tooltip>
+                    )}
                     
                     <div className="flex gap-3 flex-1 xs:flex-initial">
                         <Button 

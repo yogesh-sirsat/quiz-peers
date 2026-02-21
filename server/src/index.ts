@@ -9,6 +9,7 @@ import roomsRoutes from "./routes/rooms.routes.ts";
 import questionsRoutes from "./routes/questions.routes.ts";
 import optionsRoutes from "./routes/options.routes.ts";
 import mediaRoutes from "./routes/media.routes.ts";
+import { getRandomSimilarityQuestions } from "./controllers/questions.controller.ts";
 import "dotenv/config";
 
 const app = express();
@@ -48,6 +49,7 @@ app.get("/", (_req, res) => {
 app.use("/api/quizzes", quizzesRoutes);
 app.use("/api/rooms", roomsRoutes);
 app.use("/api/questions", questionsRoutes);
+app.get("/api/similarity-questions", getRandomSimilarityQuestions);
 app.use("/api/options", optionsRoutes);
 app.use("/api/media", mediaRoutes);
 

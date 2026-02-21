@@ -1,8 +1,8 @@
-import { Button } from "@nextui-org/react";
+import { Button, Modal, ModalBody, ModalContent, ModalHeader, useDisclosure } from "@nextui-org/react";
 import { Sparkles, Timer, Crown, Music, Play, Pause, FastForward } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState, useMemo } from "react";
-import { QuizQuestion } from "../types";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { GameMode, QuizQuestion, SimilaritySessionResult } from "../types";
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -16,7 +16,6 @@ function AudioPlayer({ audioUrl, compact }: AudioPlayerProps) {
   useEffect(() => {
     audioRef.current = new Audio(audioUrl);
     audioRef.current.onended = () => setIsPlaying(false);
-    
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -31,7 +30,7 @@ function AudioPlayer({ audioUrl, compact }: AudioPlayerProps) {
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play().catch(err => console.error("Audio playback failed", err));
+      audioRef.current.play().catch(() => {});
     }
     setIsPlaying(!isPlaying);
   };
@@ -44,10 +43,10 @@ function AudioPlayer({ audioUrl, compact }: AudioPlayerProps) {
       <div className="flex-1 min-w-0">
         <p className="text-[10px] font-bold uppercase opacity-50 leading-none mb-0.5 truncate">Audio</p>
       </div>
-      <Button 
-        isIconOnly 
-        size="sm" 
-        variant="flat" 
+      <Button
+        isIconOnly
+        size="sm"
+        variant="flat"
         color={isPlaying ? "secondary" : "primary"}
         onClick={togglePlay}
         className="shrink-0 h-8 w-8 min-w-8"
@@ -59,13 +58,15 @@ function AudioPlayer({ audioUrl, compact }: AudioPlayerProps) {
 }
 
 interface RoundResult {
-    peerId: string;
-    isCorrect: boolean;
-    pointsAwarded?: number;
+  peerId: string;
+  isCorrect: boolean | null;
+  pointsAwarded?: number;
+  selectedOptionId?: number | null;
 }
 
 interface QuizPlayRoomProps {
   quizStatus: string;
+  gameMode: GameMode;
   currentQuestion: QuizQuestion | null;
   questionIndex: number;
   totalQuestions: number;
@@ -73,6 +74,7 @@ interface QuizPlayRoomProps {
   timerPercent: number;
   roundResults: RoundResult[];
   topThree: any[];
+  similarityResult: SimilaritySessionResult | null;
   localPeerId: string;
   handleSubmitAnswer: (optionId: number) => void;
   selectedOptionId: number | null;
@@ -83,8 +85,147 @@ interface QuizPlayRoomProps {
   handleNextQuestion: () => void;
 }
 
+function SimilarityFinishedView({
+  similarityResult,
+  localPeerId
+}: {
+  similarityResult: SimilaritySessionResult | null;
+  localPeerId: string;
+}) {
+  const [pageIndex, setPageIndex] = useState(0);
+  const [modalPlayers, setModalPlayers] = useState<Array<{ peerId: string; playerName: string }>>([]);
+  const [modalTitle, setModalTitle] = useState("");
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
+  useEffect(() => {
+    setPageIndex(0);
+  }, [similarityResult]);
+
+  if (!similarityResult) {
+    return <p className="text-sm opacity-80">No similarity insights available.</p>;
+  }
+
+  const questionPages = similarityResult.questionBreakdown || [];
+  const totalPages = 3 + questionPages.length;
+  const currentQuestionPageIndex = pageIndex - 2;
+  const localRanking = similarityResult.perPlayerSimilarity?.[localPeerId] || [];
+
+  const openPlayersModal = (title: string, players: Array<{ peerId: string; playerName: string }>) => {
+    setModalTitle(title);
+    setModalPlayers(players);
+    onOpen();
+  };
+
+  return (
+    <div className="rounded-xl border border-background/20 bg-background/10 p-3 flex flex-col gap-3">
+      <div className="flex justify-between items-center">
+        <p className="text-sm font-medium">Results {pageIndex + 1}/{totalPages}</p>
+        <div className="flex gap-2">
+          <Button size="sm" variant="flat" isDisabled={pageIndex <= 0} onClick={() => setPageIndex((p) => Math.max(0, p - 1))}>
+            Prev
+          </Button>
+          <Button size="sm" color="primary" isDisabled={pageIndex >= totalPages - 1} onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}>
+            Next
+          </Button>
+        </div>
+      </div>
+
+      {pageIndex === 0 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-xl font-semibold">Most Matched Pairs</h3>
+          {(similarityResult.pairwise || []).slice(0, 12).map((pair, idx) => (
+            <div key={`${pair.playerAId}-${pair.playerBId}`} className="rounded-lg border border-background/20 bg-background/10 p-2 text-sm flex justify-between">
+              <span>{idx + 1}. {pair.playerAName} + {pair.playerBName}</span>
+              <span className="font-semibold">{pair.similarityCount}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {pageIndex === 1 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-xl font-semibold">Public Stats</h3>
+          <div className="rounded-lg border border-background/20 bg-background/10 p-3 text-sm">
+            Soulmate: {similarityResult.publicStats?.soulmate ? `${similarityResult.publicStats.soulmate.playerAName} + ${similarityResult.publicStats.soulmate.playerBName}` : "N/A"}
+          </div>
+          <div className="rounded-lg border border-background/20 bg-background/10 p-3 text-sm">
+            Lone wolf: {similarityResult.publicStats?.loneWolf?.playerName || "N/A"}
+          </div>
+          <div className="rounded-lg border border-background/20 bg-background/10 p-3 text-sm">
+            Most popular picker: {similarityResult.publicStats?.mostPopularPicker?.playerName || "N/A"}
+          </div>
+          <div className="rounded-lg border border-background/20 bg-background/10 p-3 text-sm">
+            Chaos picker: {similarityResult.publicStats?.chaosPicker?.playerName || "N/A"}
+          </div>
+        </div>
+      )}
+
+      {currentQuestionPageIndex >= 0 && currentQuestionPageIndex < questionPages.length && (
+        <div className="flex flex-col gap-3">
+          <h3 className="text-lg font-semibold">
+            Q{currentQuestionPageIndex + 1}: {questionPages[currentQuestionPageIndex].questionText}
+          </h3>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {questionPages[currentQuestionPageIndex].options.map((option) => (
+              <li
+                key={option.optionId}
+                className="rounded-xl border-2 border-background/20 bg-background/10 p-3 cursor-pointer"
+                onClick={() => openPlayersModal(option.optionText || `Option ${option.optionId}`, option.players)}
+              >
+                <p className="font-semibold">{option.optionText || `Option ${option.optionId}`}</p>
+                <p className="text-xs opacity-70 mt-1">Selected by {option.players.length} player(s)</p>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {option.players.slice(0, 10).map((player) => (
+                    <span key={player.peerId} className="text-[10px] px-2 py-1 rounded-full bg-primary/20">
+                      {player.playerName}
+                    </span>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {pageIndex === totalPages - 1 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-xl font-semibold">You Matched Most With</h3>
+          {(localRanking || []).map((entry, idx) => (
+            <div key={entry.peerId} className="rounded-lg border border-background/20 bg-background/10 p-2 text-sm flex justify-between">
+              <span>{idx + 1}. {entry.playerName}</span>
+              <span className="font-semibold">{entry.similarityCount}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+        <ModalContent>
+          {() => (
+            <>
+              <ModalHeader>{modalTitle}</ModalHeader>
+              <ModalBody>
+                {modalPlayers.length === 0 ? (
+                  <p className="text-sm opacity-70">No players selected this option.</p>
+                ) : (
+                  <ul className="pb-3">
+                    {modalPlayers.map((player) => (
+                      <li key={player.peerId} className="py-1 text-sm">{player.playerName}</li>
+                    ))}
+                  </ul>
+                )}
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+    </div>
+  );
+}
+
 export default function QuizPlayRoom({
   quizStatus,
+  gameMode,
   currentQuestion,
   questionIndex,
   totalQuestions,
@@ -92,6 +233,7 @@ export default function QuizPlayRoom({
   timerPercent,
   roundResults,
   topThree,
+  similarityResult,
   localPeerId,
   handleSubmitAnswer,
   selectedOptionId,
@@ -117,34 +259,45 @@ export default function QuizPlayRoom({
   }, []);
 
   useEffect(() => {
+    if (gameMode !== "TRIVIA") return;
     if (roundResults.length > 0) {
       const myResult = roundResults.find((r) => r.peerId === localPeerId);
-      if (myResult) {
-        if (myResult.isCorrect) {
-          successAudio.current.currentTime = 0;
-          successAudio.current.play().catch((e) => console.log("Audio play failed", e));
-        } else {
-          failAudio.current.currentTime = 0;
-          failAudio.current.play().catch((e) => console.log("Audio play failed", e));
-        }
+      if (myResult?.isCorrect) {
+        successAudio.current.currentTime = 0;
+        successAudio.current.play().catch(() => {});
+      } else if (myResult?.isCorrect === false) {
+        failAudio.current.currentTime = 0;
+        failAudio.current.play().catch(() => {});
       }
     }
-  }, [roundResults, localPeerId]);
+  }, [gameMode, roundResults, localPeerId]);
 
   useEffect(() => {
     if (quizStatus === "finished") {
-      const isTotalFailure = !topThree || topThree.length === 0 || (topThree[0] && topThree[0].score === 0);
-      if (!isTotalFailure) {
-        celebrationAudio.current.currentTime = 0;
-        celebrationAudio.current.play().catch((e) => console.log("Audio play failed", e));
+      if (gameMode === "TRIVIA") {
+        const isTotalFailure = !topThree || topThree.length === 0 || (topThree[0] && topThree[0].score === 0);
+        if (!isTotalFailure) {
+          celebrationAudio.current.currentTime = 0;
+          celebrationAudio.current.play().catch(() => {});
+        } else {
+          failAudio.current.currentTime = 0;
+          failAudio.current.play().catch(() => {});
+        }
       } else {
-        failAudio.current.currentTime = 0;
-        failAudio.current.play().catch((e) => console.log("Audio play failed", e));
+        celebrationAudio.current.currentTime = 0;
+        celebrationAudio.current.play().catch(() => {});
       }
     }
-  }, [quizStatus, topThree]);
+  }, [gameMode, quizStatus, topThree]);
 
   const optionClassName = (optionId: number) => {
+    if (gameMode === "SIMILARITY") {
+      if (Number(selectedOptionId) === optionId) {
+        return "border-amber-400 bg-amber-400/20";
+      }
+      return "border-background/20 bg-background/10 hover:bg-background/20";
+    }
+
     if (correctOptionId !== null) {
       if (optionId === Number(correctOptionId)) {
         return "border-green-500 bg-green-500/20";
@@ -166,8 +319,11 @@ export default function QuizPlayRoom({
   };
 
   if (quizStatus === "finished") {
-    const isTotalFailure = !topThree || topThree.length === 0 || (topThree[0] && topThree[0].score === 0);
+    if (gameMode === "SIMILARITY") {
+      return <SimilarityFinishedView similarityResult={similarityResult} localPeerId={localPeerId} />;
+    }
 
+    const isTotalFailure = !topThree || topThree.length === 0 || (topThree[0] && topThree[0].score === 0);
     return (
       <div className="flex flex-col gap-4 relative overflow-hidden p-4 rounded-xl border border-background/20 bg-background/10 min-h-[400px]">
         {!isTotalFailure && (
@@ -185,88 +341,45 @@ export default function QuizPlayRoom({
             </div>
           </AnimatePresence>
         )}
-
         <div className="relative z-10 w-full flex flex-col items-center h-full justify-center">
           <h1 className="text-2xl xs:text-3xl font-semibold flex items-center gap-2 mb-2 text-center">
-            {isTotalFailure ? (
-              <span className="text-red-400">💀 Game Over</span>
-            ) : (
-              <>
-                <Sparkles className="text-amber-300" /> Quiz Complete
-              </>
-            )}
+            {isTotalFailure ? <span className="text-red-400">Game Over</span> : <><Sparkles className="text-amber-300" /> Quiz Complete</>}
           </h1>
-          
-          {isTotalFailure ? (
-             <motion.div 
-               initial={{ scale: 0.8, opacity: 0 }}
-               animate={{ scale: 1, opacity: 1 }}
-               className="flex flex-col items-center justify-center my-8 p-6 border-2 border-dashed border-red-500/30 rounded-2xl bg-red-500/10"
-             >
-                <p className="text-4xl mb-2">🤡</p>
-                <p className="text-xl font-bold text-red-300 text-center uppercase tracking-widest" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
-                  Seriously?
-                </p>
-                <p className="text-lg text-red-200/80 text-center mt-1">
-                  You all are losers!
-                </p>
-                <p className="text-sm opacity-50 mt-4 text-center">0 pts for everyone. Impressive.</p>
-             </motion.div>
-          ) : (
-            <>
-              <p className="opacity-85 mb-6">Final top 3</p>
-              <div className="flex justify-center items-end gap-2 sm:gap-4 w-full h-48 sm:h-56 px-4">
-                 {topThree[1] && (
-                   <motion.div
-                     initial={{ scale: 0.5, opacity: 0, y: 50 }}
-                     animate={{ scale: 1, opacity: 1, y: 0 }}
-                     transition={{ delay: 0.4, type: "spring" }}
-                     className="flex flex-col items-center justify-end w-1/3 sm:w-1/4"
-                   >
-                     <div className="w-full bg-background/20 border-t-4 border-slate-300 rounded-t-xl p-3 flex flex-col items-center justify-center h-32 sm:h-36">
-                       <p className="text-xs uppercase font-bold text-slate-300 mb-1">2nd</p>
-                       <p className="font-bold text-sm sm:text-base text-center line-clamp-2">{topThree[1].playerName}</p>
-                       <p className="text-xs opacity-80">{topThree[1].score} pts</p>
-                     </div>
-                   </motion.div>
-                 )}
-    
-                 {topThree[0] && (
-                   <motion.div
-                     initial={{ scale: 0.5, opacity: 0, y: 50 }}
-                     animate={{ scale: 1, opacity: 1, y: 0 }}
-                     transition={{ delay: 0.2, type: "spring" }}
-                     className="flex flex-col items-center justify-end w-1/3 sm:w-1/4 z-10"
-                   >
-                     <div className="relative w-full">
-                        <Crown className="absolute -top-8 left-1/2 -translate-x-1/2 text-amber-300 drop-shadow-lg" size={32} />
-                        <div className="w-full bg-amber-500/20 border-t-4 border-amber-400 rounded-t-xl p-4 flex flex-col items-center justify-center h-40 sm:h-48 shadow-[0_0_30px_rgba(251,191,36,0.2)]">
-                          <p className="text-sm uppercase font-bold text-amber-300 mb-1">1st</p>
-                          <p className="font-bold text-base sm:text-lg text-center line-clamp-2">{topThree[0].playerName}</p>
-                          <p className="text-sm font-semibold">{topThree[0].score} pts</p>
-                        </div>
-                     </div>
-                   </motion.div>
-                 )}
-    
-                 {topThree[2] && (
-                   <motion.div
-                     initial={{ scale: 0.5, opacity: 0, y: 50 }}
-                     animate={{ scale: 1, opacity: 1, y: 0 }}
-                     transition={{ delay: 0.6, type: "spring" }}
-                     className="flex flex-col items-center justify-end w-1/3 sm:w-1/4"
-                   >
-                     <div className="w-full bg-background/20 border-t-4 border-amber-700/60 rounded-t-xl p-3 flex flex-col items-center justify-center h-24 sm:h-28">
-                       <p className="text-xs uppercase font-bold text-amber-700 mb-1">3rd</p>
-                       <p className="font-bold text-xs sm:text-sm text-center line-clamp-2">{topThree[2].playerName}</p>
-                       <p className="text-xs opacity-80">{topThree[2].score} pts</p>
-                     </div>
-                   </motion.div>
-                 )}
-              </div>
-            </>
+          {!isTotalFailure && <p className="opacity-85 mb-6">Final top 3</p>}
+          {!isTotalFailure && (
+            <div className="flex justify-center items-end gap-2 sm:gap-4 w-full h-48 sm:h-56 px-4">
+              {topThree[1] && (
+                <motion.div initial={{ scale: 0.5, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} transition={{ delay: 0.4, type: "spring" }} className="flex flex-col items-center justify-end w-1/3 sm:w-1/4">
+                  <div className="w-full bg-background/20 border-t-4 border-slate-300 rounded-t-xl p-3 flex flex-col items-center justify-center h-32 sm:h-36">
+                    <p className="text-xs uppercase font-bold text-slate-300 mb-1">2nd</p>
+                    <p className="font-bold text-sm sm:text-base text-center line-clamp-2">{topThree[1].playerName}</p>
+                    <p className="text-xs opacity-80">{topThree[1].score} pts</p>
+                  </div>
+                </motion.div>
+              )}
+              {topThree[0] && (
+                <motion.div initial={{ scale: 0.5, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} transition={{ delay: 0.2, type: "spring" }} className="flex flex-col items-center justify-end w-1/3 sm:w-1/4 z-10">
+                  <div className="relative w-full">
+                    <Crown className="absolute -top-8 left-1/2 -translate-x-1/2 text-amber-300 drop-shadow-lg" size={32} />
+                    <div className="w-full bg-amber-500/20 border-t-4 border-amber-400 rounded-t-xl p-4 flex flex-col items-center justify-center h-40 sm:h-48 shadow-[0_0_30px_rgba(251,191,36,0.2)]">
+                      <p className="text-sm uppercase font-bold text-amber-300 mb-1">1st</p>
+                      <p className="font-bold text-base sm:text-lg text-center line-clamp-2">{topThree[0].playerName}</p>
+                      <p className="text-sm font-semibold">{topThree[0].score} pts</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+              {topThree[2] && (
+                <motion.div initial={{ scale: 0.5, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} transition={{ delay: 0.6, type: "spring" }} className="flex flex-col items-center justify-end w-1/3 sm:w-1/4">
+                  <div className="w-full bg-background/20 border-t-4 border-amber-700/60 rounded-t-xl p-3 flex flex-col items-center justify-center h-24 sm:h-28">
+                    <p className="text-xs uppercase font-bold text-amber-700 mb-1">3rd</p>
+                    <p className="font-bold text-xs sm:text-sm text-center line-clamp-2">{topThree[2].playerName}</p>
+                    <p className="text-xs opacity-80">{topThree[2].score} pts</p>
+                  </div>
+                </motion.div>
+              )}
+            </div>
           )}
-
           <Button className="mt-8 z-20" color="secondary" onClick={() => setIsLeaderboardOpen(true)}>
             View Leaderboard
           </Button>
@@ -288,17 +401,12 @@ export default function QuizPlayRoom({
         <>
           {currentQuestion.imageUrl && (
             <div className="w-full flex justify-center mb-4 bg-black/5 rounded-xl overflow-hidden h-60">
-              <img
-                src={currentQuestion.imageUrl}
-                alt="Question"
-                className="h-full w-full object-contain"
-              />
+              <img src={currentQuestion.imageUrl} alt="Question" className="h-full w-full object-contain" />
             </div>
           )}
-          
           {currentQuestion.audioUrl && (
             <div className="w-full flex justify-center mb-4">
-               <AudioPlayer audioUrl={currentQuestion.audioUrl} />
+              <AudioPlayer audioUrl={currentQuestion.audioUrl} />
             </div>
           )}
 
@@ -312,13 +420,9 @@ export default function QuizPlayRoom({
                   disabled={correctOptionId !== null}
                   className={`w-full text-left rounded-xl border-2 px-3 py-3 transition-all flex flex-col gap-3 min-h-[80px] ${optionClassName(option.optionId)}`}
                 >
-                   {option.imageUrl && (
+                  {option.imageUrl && (
                     <div className="w-full h-32 bg-black/5 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
-                      <img
-                        src={option.imageUrl}
-                        alt="Option"
-                        className="h-full w-full object-contain"
-                      />
+                      <img src={option.imageUrl} alt="Option" className="h-full w-full object-contain" />
                     </div>
                   )}
                   {option.audioUrl && (
@@ -332,19 +436,25 @@ export default function QuizPlayRoom({
             ))}
           </ul>
 
-          {roundResults.length > 0 && correctOptionId !== null ? (
+          {roundResults.length > 0 && (gameMode === "SIMILARITY" || correctOptionId !== null) ? (
             <div className="mt-4 flex flex-col items-center gap-3">
-              <p className="text-sm font-bold text-center bg-background/20 py-2 px-4 rounded-lg w-full">
-                {roundResults.find((result) => result.peerId === localPeerId)?.isCorrect
-                  ? `✨ Correct! +${roundResults.find((result) => result.peerId === localPeerId)?.pointsAwarded || 0} pts`
-                  : "❌ Incorrect. Better luck next time!"}
-              </p>
-              
+              {gameMode === "TRIVIA" ? (
+                <p className="text-sm font-bold text-center bg-background/20 py-2 px-4 rounded-lg w-full">
+                  {roundResults.find((result) => result.peerId === localPeerId)?.isCorrect
+                    ? `Correct! +${roundResults.find((result) => result.peerId === localPeerId)?.pointsAwarded || 0} pts`
+                    : "Incorrect. Better luck next time!"}
+                </p>
+              ) : (
+                <p className="text-sm font-bold text-center bg-background/20 py-2 px-4 rounded-lg w-full">
+                  Answers locked for this round
+                </p>
+              )}
+
               {!isAutoPlay && quizStatus === "playing" && (
                 <div className="w-full flex justify-center mt-2">
                   {isHost ? (
-                    <Button 
-                      color="success" 
+                    <Button
+                      color="success"
                       variant="solid"
                       onClick={handleNextQuestion}
                       className="font-black w-full h-12 text-lg shadow-lg"

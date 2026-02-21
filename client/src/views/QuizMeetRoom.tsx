@@ -15,6 +15,7 @@ import PlayerNameModal from "../components/quiz-meet-room/PlayerNameModal";
 import useAudioActivity from "../hooks/useAudioActivity";
 import { LeaderboardModal } from "../components/quiz-meet-room/LeaderboardModal";
 import { useQuizWebSocket } from "../hooks/useQuizWebSocket";
+import { GameMode } from "../types";
 
 export default function QuizMeetRoom() {
   const dispatch = useDispatch();
@@ -22,6 +23,8 @@ export default function QuizMeetRoom() {
   const { quizId, roomId } = useParams<{ quizId: string; roomId: string }>();
   const [searchParams] = useSearchParams();
   const [isRoomPublic, setIsRoomPublic] = useState<boolean>(searchParams.get("public") === "true");
+  const requestedMode: GameMode = searchParams.get("mode") === "SIMILARITY" ? "SIMILARITY" : "TRIVIA";
+  const requestedSimilarityCount = Number(searchParams.get("count") || 10);
   
   const {
     playerName,
@@ -30,6 +33,7 @@ export default function QuizMeetRoom() {
     readyPeerIds,
     totalPlayers,
     quizStatus,
+    gameMode,
     currentQuestion,
     questionIndex,
     totalQuestions,
@@ -39,12 +43,13 @@ export default function QuizMeetRoom() {
     leaderboard,
     roundResults,
     topThree,
+    similarityResult,
     skipCount,
     isAutoPlay,
     isWsConnected,
     roomError,
     sendJson,
-  } = useQuizWebSocket(roomId, Number(quizId), isRoomPublic, webSocketUrl);
+  } = useQuizWebSocket(roomId, Number(quizId), isRoomPublic, webSocketUrl, requestedMode, requestedSimilarityCount);
 
   const [isLocalPlayerMute, setIsLocalPlayerMute] = useState<boolean>(true);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState<string | null>(null);
@@ -257,7 +262,13 @@ export default function QuizMeetRoom() {
       <NavbarComponent />
       <article
         className="mt-4 xs:mt-6 mx-3 xs:mx-4 md:mx-auto w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] gap-2 flex flex-col overflow-y-auto">
-        {quizStatus === "waiting" && <QuizNameCard quizId={Number(quizId)} />}
+        {quizStatus === "waiting" && gameMode === "TRIVIA" && <QuizNameCard quizId={Number(quizId)} />}
+        {quizStatus === "waiting" && gameMode === "SIMILARITY" && (
+          <div className="text-foreground flex flex-col gap-2 bg-background/60 shadow-2xl p-3 xxs:p-4 xs:p-6 rounded-2xl">
+            <h1 className="text-xl xs:text-2xl sm:text-3xl font-semibold">Similarity Quiz Room</h1>
+            <p className="text-sm opacity-80">Random questions: {Math.max(1, Math.min(20, requestedSimilarityCount || 10))}</p>
+          </div>
+        )}
 
         <section className="mb-6 flex flex-col gap-3 text-foreground bg-background/60 shadow-2xl p-3 xxs:p-4 xs:p-6 rounded-2xl overflow-y-auto">
           <div className="flex flex-row justify-between items-center mb-1 pr-1 gap-2">
@@ -281,16 +292,22 @@ export default function QuizMeetRoom() {
                   <span className="hidden xs:inline">{hasVotedToSkip ? "Skipped" : "Skip Timer"}</span> ({skipCount}/{totalPlayers})
                 </Button>
               )}
-              <Button
-                variant="flat"
-                radius="sm"
-                size="sm"
-                startContent={<Trophy size={18} />}
-                onClick={() => setIsLeaderboardOpen(true)}
-                className="min-w-0 px-3"
-              >
-                <span className="hidden xs:inline">Leaderboard</span>
-              </Button>
+              {gameMode === "TRIVIA" ? (
+                <Button
+                  variant="flat"
+                  radius="sm"
+                  size="sm"
+                  startContent={<Trophy size={18} />}
+                  onClick={() => setIsLeaderboardOpen(true)}
+                  className="min-w-0 px-3"
+                >
+                  <span className="hidden xs:inline">Leaderboard</span>
+                </Button>
+              ) : (
+                <Button variant="flat" radius="sm" size="sm" className="min-w-0 px-3" isDisabled>
+                  <span className="hidden xs:inline">Players: {totalPlayers}</span>
+                </Button>
+              )}
               {quizStatus === "waiting" && (
                 <Button
                     variant="flat"
@@ -420,12 +437,14 @@ export default function QuizMeetRoom() {
             <QuizPlayRoom
               quizStatus={quizStatus}
               currentQuestion={currentQuestion}
+              gameMode={gameMode}
               questionIndex={questionIndex}
               totalQuestions={totalQuestions}
               timeRemainingMs={timeRemainingMs}
               timerPercent={timerPercent}
               roundResults={roundResults}
               topThree={topThree}
+              similarityResult={similarityResult}
               localPeerId={localPeerId || ""}
               handleSubmitAnswer={handleSubmitAnswer}
               selectedOptionId={selectedOptionId}

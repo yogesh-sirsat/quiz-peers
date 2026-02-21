@@ -5,7 +5,8 @@ import {
   getAllQuestions,
   updateQuestion,
   deleteQuestion,
-  setCorrectOption
+  setCorrectOption,
+  getRandomSimilarityQuestions
 } from "../controllers/questions.controller.ts";
 import {
   createOption,
@@ -15,6 +16,7 @@ import {
 const router = Router();
 
 router.get("/", getAllQuestions);
+router.get("/similarity-questions", getRandomSimilarityQuestions);
 router.post("/", createQuestion);
 router.get("/:questionId", getQuestionById);
 router.patch("/:questionId", updateQuestion);

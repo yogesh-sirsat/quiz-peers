@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import Peer, { DataConnection } from 'peerjs';
 import { addChatMessage, addUpdateRoomPlayer, removeRoomPlayer } from '../store/features/roomSlice';
-import { LeaderboardEntry, QuizQuestion } from '../types';
+import { GameMode, LeaderboardEntry, QuizQuestion, SimilaritySessionResult } from '../types';
 
 export type QuizStatus = "waiting" | "playing" | "finished";
 
@@ -24,7 +24,9 @@ export function useQuizWebSocket(
   roomId: string | undefined, 
   quizId: number | undefined, 
   isRoomPublic: boolean,
-  webSocketUrl: string
+  webSocketUrl: string,
+  initialMode: GameMode = "TRIVIA",
+  similarityQuestionCount: number = 10
 ) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -35,6 +37,7 @@ export function useQuizWebSocket(
   const [readyPeerIds, setReadyPeerIds] = useState<string[]>([]);
   const [totalPlayers, setTotalPlayers] = useState<number>(0);
   const [quizStatus, setQuizStatus] = useState<QuizStatus>("waiting");
+  const [gameMode, setGameMode] = useState<GameMode>(initialMode);
   
   const [currentQuestion, setCurrentQuestion] = useState<CurrentQuestion | null>(null);
   const [questionIndex, setQuestionIndex] = useState<number>(0);
@@ -46,6 +49,7 @@ export function useQuizWebSocket(
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [roundResults, setRoundResults] = useState<any[]>([]);
   const [topThree, setTopThree] = useState<any[]>([]);
+  const [similarityResult, setSimilarityResult] = useState<SimilaritySessionResult | null>(null);
   const [skipCount, setSkipCount] = useState<number>(0);
   const [isAutoPlay, setIsAutoPlay] = useState<boolean>(false);
   const [isWsConnected, setIsWsConnected] = useState<boolean>(false);
@@ -179,7 +183,13 @@ export function useQuizWebSocket(
       setIsWsConnected(true);
       try {
         wsRef.current?.send(JSON.stringify({
-          roomId, quizId, peerId, event: "joinRoom", isRoomPublic
+          roomId,
+          quizId,
+          peerId,
+          event: "joinRoom",
+          isRoomPublic,
+          mode: initialMode,
+          similarityQuestionCount
         }));
       } catch (e) {
         console.log(e);
@@ -197,13 +207,14 @@ export function useQuizWebSocket(
           setHostPeerId(data?.hostPeerId || null);
           setReadyPeerIds(data?.roomPlayers?.filter((player: any) => player.readyToStart).map((player: any) => player.peerId) || []);
           setTotalPlayers(data?.roomPlayers?.length || 0);
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
           setTimeout(() => {
             handleJoinRoomSuccess(data, peerId, data?.playerName || "");
           }, 1000);
           break;
         case "joinRoomFailed":
           alert(data?.message);
-          navigate("/quiz/" + quizId);
+          navigate(initialMode === "SIMILARITY" ? "/similarity" : "/quiz/" + quizId);
           break;
         case "playerNameChanged":
           if (data?.success && data?.newPlayerName) {
@@ -220,6 +231,7 @@ export function useQuizWebSocket(
           }));
           break;
         case "waitingRoomState":
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
           setHostPeerId(data?.hostPeerId || null);
           setReadyPeerIds(data?.readyPeerIds || []);
           setTotalPlayers(data?.totalPlayers || 0);
@@ -236,14 +248,17 @@ export function useQuizWebSocket(
           }
           break;
         case "quizStarted":
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
           setQuizStatus("playing");
           setTotalQuestions(data?.totalQuestions || 0);
           setRoundResults([]);
+          setSimilarityResult(null);
           break;
         case "quizStartFailed":
           alert(data?.message || "Could not start quiz.");
           break;
         case "quizQuestion":
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
           setQuizStatus("playing");
           setCurrentQuestion(data?.question || null);
           setQuestionIndex((data?.questionIndex || 0) + 1);
@@ -261,6 +276,7 @@ export function useQuizWebSocket(
           // Can handle if needed
           break;
         case "questionResult":
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
           setQuestionEndsAt(0);
           setRoundResults(data?.results || []);
           setLeaderboard(data?.leaderboard || []);
@@ -268,12 +284,15 @@ export function useQuizWebSocket(
           setIsAutoPlay(data?.isAutoPlay ?? false);
           break;
         case "playerLeftPlayingRoom":
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
           setLeaderboard(data?.leaderboard || []);
           break;
         case "quizFinished":
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
           setQuizStatus("finished");
           setLeaderboard(data?.leaderboard || []);
           setTopThree(data?.topThree || []);
+          setSimilarityResult(data?.similarityResult || null);
           setCurrentQuestion(null);
           setRoundResults([]);
           break;
@@ -299,7 +318,7 @@ export function useQuizWebSocket(
         peerRef.current = null;
       }
     };
-  }, [dispatch, handleConnectionData, handleJoinRoomSuccess, isRoomPublic, navigate, quizId, roomId, webSocketUrl]);
+  }, [dispatch, handleConnectionData, handleJoinRoomSuccess, initialMode, isRoomPublic, navigate, quizId, roomId, similarityQuestionCount, webSocketUrl]);
 
   return {
     playerName,
@@ -308,6 +327,7 @@ export function useQuizWebSocket(
     readyPeerIds,
     totalPlayers,
     quizStatus,
+    gameMode,
     currentQuestion,
     questionIndex,
     totalQuestions,
@@ -317,6 +337,7 @@ export function useQuizWebSocket(
     leaderboard,
     roundResults,
     topThree,
+    similarityResult,
     skipCount,
     isAutoPlay,
     isWsConnected,
