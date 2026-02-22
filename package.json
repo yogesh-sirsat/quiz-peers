@@ -6,6 +6,13 @@
     "server",
     "shared"
   ],
+  "scripts": {
+    "server:dev": "npm run dev -w server",
+    "server:start": "npm run start -w server",
+    "server:build": "npm run build -w server",
+    "client:dev": "npm run dev -w client",
+    "client:build": "npm run build -w client"
+  },
   "engines": {
     "node": ">=18.0.0"
   }

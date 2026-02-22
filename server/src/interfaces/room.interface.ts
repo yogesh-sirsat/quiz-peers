@@ -1,4 +1,4 @@
-import { ExtendedWebSocket } from './websocket.interface.ts';
+import { ExtendedWebSocket } from './websocket.interface';
 import { QuizQuestion } from '@quiz-peers/shared';
 
 export * from "@quiz-peers/shared";
@@ -32,3 +32,4 @@ export interface PlayingRoom {
   questionStartTime: number;
   isPublic: boolean;
 }
+

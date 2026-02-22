@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getIdForPrivateRoom, getPublicRoomId, getRoomDetailsById } from "../controllers/rooms.controller.ts";
+import { getIdForPrivateRoom, getPublicRoomId, getRoomDetailsById } from "../controllers/rooms.controller";
 
 const router = Router();
 
@@ -8,3 +8,4 @@ router.get("/get-id-for-private-room", getIdForPrivateRoom);
 router.get("/:roomId", getRoomDetailsById);
 
 export default router;
+

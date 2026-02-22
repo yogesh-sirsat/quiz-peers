@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { uploadToR2 } from "../utils/s3.utils.ts";
+import { uploadToR2 } from "../utils/s3.utils";
 import { nanoid } from "nanoid";
-import HttpAppError from "../errors/app.error.ts";
+import HttpAppError from "../errors/app.error";
 
 export async function uploadMedia(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -30,3 +30,4 @@ export async function uploadMedia(req: Request, res: Response, next: NextFunctio
     next(error);
   }
 }
+

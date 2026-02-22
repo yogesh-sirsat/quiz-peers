@@ -2,14 +2,14 @@ import express from "express";
 import http from "http";
 import { WebSocketServer } from "ws";
 import cors from "cors";
-import errorHandler from "./middlewares/errorHandler.middleware.ts";
-import websocketHandler from "./websockets/handler.websocket.ts";
-import quizzesRoutes from "./routes/quizzes.routes.ts";
-import roomsRoutes from "./routes/rooms.routes.ts";
-import questionsRoutes from "./routes/questions.routes.ts";
-import optionsRoutes from "./routes/options.routes.ts";
-import mediaRoutes from "./routes/media.routes.ts";
-import { getRandomSimilarityQuestions } from "./controllers/questions.controller.ts";
+import errorHandler from "./middlewares/errorHandler.middleware";
+import websocketHandler from "./websockets/handler.websocket";
+import quizzesRoutes from "./routes/quizzes.routes";
+import roomsRoutes from "./routes/rooms.routes";
+import questionsRoutes from "./routes/questions.routes";
+import optionsRoutes from "./routes/options.routes";
+import mediaRoutes from "./routes/media.routes";
+import { getRandomSimilarityQuestions } from "./controllers/questions.controller";
 import "dotenv/config";
 
 const app = express();
@@ -63,3 +63,4 @@ app.use(errorHandler);
 server.listen(port, () => {
   console.log(`Quiz peers app listening on port ${port}`);
 });
+
