@@ -38,25 +38,40 @@ export default function useAudioActivity(stream: MediaStream | null, threshold: 
 
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
+      let lastUpdate = 0;
+      let lastSpeakingState = false;
+      const THROTTLE_MS = 100;
+      const DEBOUNCE_MS = 400; // Hang-over time to keep indicator active during brief pauses
+      let lastSpeakingTime = 0;
 
       const checkAudio = () => {
         if (!analyserRef.current) return;
 
         analyserRef.current.getByteFrequencyData(dataArray);
 
-        // Calculate RMS (Root Mean Square) to get volume
         let sum = 0;
         for (let i = 0; i < bufferLength; i++) {
           sum += dataArray[i] * dataArray[i];
         }
         const rms = Math.sqrt(sum / bufferLength);
-        
-        // Convert to dB (approximate)
-        // dB = 20 * log10(rms / 255)
-        
         const db = rms > 0 ? 20 * Math.log10(rms / 255) : -100;
 
-        setIsSpeaking(db > threshold);
+        const now = Date.now();
+        const currentlySpeaking = db > threshold;
+        
+        if (currentlySpeaking) {
+          lastSpeakingTime = now;
+        }
+
+        const shouldBeSpeaking = (now - lastSpeakingTime) < DEBOUNCE_MS;
+
+        if (now - lastUpdate > THROTTLE_MS) {
+          if (shouldBeSpeaking !== lastSpeakingState) {
+            setIsSpeaking(shouldBeSpeaking);
+            lastSpeakingState = shouldBeSpeaking;
+          }
+          lastUpdate = now;
+        }
 
         animationFrameRef.current = requestAnimationFrame(checkAudio);
       };

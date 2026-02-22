@@ -54,6 +54,7 @@ export function useQuizWebSocket(
   const [isAutoPlay, setIsAutoPlay] = useState<boolean>(false);
   const [isWsConnected, setIsWsConnected] = useState<boolean>(false);
   const [roomError, setRoomError] = useState<string | null>(null);
+  const [peer, setPeer] = useState<Peer | null>(null);
 
   const peerRef = useRef<Peer | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -64,7 +65,7 @@ export function useQuizWebSocket(
     }
   }, []);
 
-  const handleConnectionData = useCallback((data: ConnectionData) => {
+  const handleConnectionData = useCallback((data: ConnectionData, fallbackPeerId?: string) => {
     switch (data.type) {
       case "chatMessage":
         dispatch(addChatMessage({
@@ -75,13 +76,16 @@ export function useQuizWebSocket(
         }));
         break;
       case "muteStatus":
+        if (!(data?.peerId || fallbackPeerId)) break;
         dispatch(addUpdateRoomPlayer({
-          key: data?.peerId || "", value: { isMute: data?.muteStatus }
+          key: data?.peerId || fallbackPeerId || "",
+          value: { isMute: data?.muteStatus }
         }));
         break;
       case "speakingStatus":
+        if (!(data?.peerId || fallbackPeerId)) break;
         dispatch(addUpdateRoomPlayer({
-          key: data?.peerId || "",
+          key: data?.peerId || fallbackPeerId || "",
           value: { isSpeaking: data?.isSpeaking }
         }));
         break;
@@ -108,7 +112,7 @@ export function useQuizWebSocket(
         }
       }));
       dataConnection.on("data", (data: any) => {
-        handleConnectionData(data as ConnectionData);
+        handleConnectionData(data as ConnectionData, player?.peerId);
       });
     });
   }, [dispatch, handleConnectionData]);
@@ -137,19 +141,21 @@ export function useQuizWebSocket(
       peerId = uuidv4();
       peerRef.current = new Peer(peerId, {
         secure: false, debug: 1, config: {
-          iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            {
-              urls: "turn:freeturn.net:3478",
-              username: "free", credential: "free"
-            }, {
-              urls: "turns:freeturn.net:5349",
-              username: "free", credential: "free"
-            }]
+          // iceServers: [
+          //   { urls: "stun:stun.l.google.com:19302" },
+          //   {
+          //     urls: "turn:freeturn.net:3478",
+          //     username: "free", credential: "free"
+          //   }, {
+          //     urls: "turns:freeturn.net:5349",
+          //     username: "free", credential: "free"
+          //   }]
         }
       });
+      setPeer(peerRef.current);
     } else {
       peerId = peerRef.current.id;
+      setPeer(peerRef.current);
     }
 
     peerRef.current.on("open", (id) => {
@@ -157,24 +163,22 @@ export function useQuizWebSocket(
     });
 
     peerRef.current.on("connection", (conn: DataConnection) => {
-      setTimeout(() => {
-        const remotePlayerName = (conn.metadata as any)?.playerName;
-        if (remotePlayerName) {
-            dispatch(addUpdateRoomPlayer({
-            key: conn.peer,
-            value: { dataConnection: conn, playerName: remotePlayerName, isMute: false }
-            }));
-            dispatch(addChatMessage({
-            id: uuidv4(),
-            sender: "System",
-            text: `${remotePlayerName} joined the room!`,
-            timestamp: Date.now()
-            }));
-        }
-        conn.on("data", (data: any) => {
-          handleConnectionData(data as ConnectionData);
-        });
-      }, 1000);
+      const remotePlayerName = (conn.metadata as any)?.playerName;
+      dispatch(addUpdateRoomPlayer({
+        key: conn.peer,
+        value: { dataConnection: conn, playerName: remotePlayerName || "Player", isMute: false }
+      }));
+      if (remotePlayerName) {
+        dispatch(addChatMessage({
+          id: uuidv4(),
+          sender: "System",
+          text: `${remotePlayerName} joined the room!`,
+          timestamp: Date.now()
+        }));
+      }
+      conn.on("data", (data: any) => {
+        handleConnectionData(data as ConnectionData, conn.peer);
+      });
     });
 
     peerRef.current.on("disconnected", () => {
@@ -322,6 +326,7 @@ export function useQuizWebSocket(
         peerRef.current.destroy();
         peerRef.current = null;
       }
+      setPeer(null);
       dispatch(clearRoomState());
     };
   }, [dispatch, handleConnectionData, handleJoinRoomSuccess, initialMode, isRoomPublic, navigate, quizId, roomId, similarityQuestionCount, webSocketUrl]);
@@ -348,6 +353,7 @@ export function useQuizWebSocket(
     isAutoPlay,
     isWsConnected,
     roomError,
+    peer,
     sendJson,
     setQuizStatus,
     setRoundResults,
