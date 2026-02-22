@@ -2,7 +2,7 @@
  * @fileoverview Script to import a quiz from a JSON file into the Quiz Peers database via the backend API.
  * 
  * Usage: 
- * 1. Set VITE_SERVER_API_URL in your environment or use default http://localhost:3000/api
+ * 1. Set SERVER_API_URL in your environment or use default http://localhost:3000/api
  * 2. node scripts/import_quiz.js <path_to_json_file>
  */
 
@@ -11,7 +11,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import 'dotenv/config';
 
-const API_URL = process.env.VITE_SERVER_API_URL || 'http://localhost:3000/api';
+const API_URL = process.env.SERVER_API_URL || 'http://localhost:3000/api';
 
 /**
  * @typedef {Object} Option
