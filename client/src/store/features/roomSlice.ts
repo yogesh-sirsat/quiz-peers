@@ -37,6 +37,10 @@ const roomSlice = createSlice({
       if (state.roomPlayers[peerId]) {
         state.roomPlayers[peerId].isMute = false;
       }
+    },
+    clearRoomState: (state) => {
+      state.chatMessages = [];
+      state.roomPlayers = {};
     }
   }
 });
@@ -46,6 +50,7 @@ export const {
   addUpdateRoomPlayer,
   removeRoomPlayer,
   muteRoomPlayer,
-  unmuteRoomPlayer
+  unmuteRoomPlayer,
+  clearRoomState
 } = roomSlice.actions;
 export default roomSlice.reducer;

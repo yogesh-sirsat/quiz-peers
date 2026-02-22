@@ -659,10 +659,6 @@ export function handleSubmitAnswer(ws: ExtendedWebSocket, data: any): void {
       submittedAt: Date.now()
     });
     safeSend(ws, { event: "answerAccepted", alreadyAnswered: false });
-
-    if (session.currentAnswers.size === session.players.size) {
-      finalizeCurrentQuestion(session.roomId, session.isRoomPublic);
-    }
   } catch (error) {
     console.error(error);
     safeSend(ws, { event: "submitAnswerFailed", message: "Unable to submit answer." });

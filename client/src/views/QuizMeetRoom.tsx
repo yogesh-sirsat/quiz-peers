@@ -1,9 +1,9 @@
-import { useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react";
 import NavbarComponent from "../components/ui/Navbar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import QuizNameCard from "../components/quiz-meet-room/QuizNameCard";
-import { Crown, Mic, MicOff, Trophy, Pencil, FastForward, Share2, Check } from "lucide-react";
+import { Crown, Mic, MicOff, Trophy, Pencil, FastForward, Share2, Check, LogOut } from "lucide-react";
 import { MEDIA_CONSTRAINTS } from "../config/mediaConfig";
 import AudioDeviceManager from "../components/quiz-meet-room/AudioDeviceManager";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,6 +19,7 @@ import { GameMode } from "../types";
 
 export default function QuizMeetRoom() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const webSocketUrl = import.meta.env.VITE_WEBSOCKET_URL;
   const { quizId, roomId } = useParams<{ quizId: string; roomId: string }>();
   const [searchParams] = useSearchParams();
@@ -56,6 +57,7 @@ export default function QuizMeetRoom() {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState<boolean>(false);
   const [isPlayersModalOpen, setIsPlayersModalOpen] = useState<boolean>(false);
   const [isNameModalOpen, setIsNameModalOpen] = useState<boolean>(false);
+  const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState<boolean>(false);
   const [isLinkCopied, setIsLinkCopied] = useState<boolean>(false);
 
   const [timeRemainingMs, setTimeRemainingMs] = useState<number>(0);
@@ -76,6 +78,15 @@ export default function QuizMeetRoom() {
     setIsLinkCopied(true);
     setTimeout(() => setIsLinkCopied(false), 2000);
   }, []);
+
+  const handleLeaveRoom = useCallback(() => {
+    sendJson({
+      event: "leaveWaitingRoom",
+      roomId,
+      isRoomPublic
+    });
+    navigate("/");
+  }, [isRoomPublic, navigate, roomId, sendJson]);
 
   const toggleMute = useCallback((peerId: string, currentMuteStatus: boolean) => {
     dispatch(addUpdateRoomPlayer({
@@ -353,6 +364,17 @@ export default function QuizMeetRoom() {
                     <span className="hidden xs:inline">{isLinkCopied ? "Copied!" : "Invite Friends"}</span>
                 </Button>
               )}
+              <Button
+                variant="flat"
+                radius="sm"
+                size="sm"
+                color="danger"
+                startContent={<LogOut size={18} />}
+                onClick={() => setIsLeaveConfirmOpen(true)}
+                className="min-w-0 px-3"
+              >
+                <span className="hidden xs:inline">Leave Room</span>
+              </Button>
               <TextChatInterface localPeerId={localPeerId || ""} localPlayerName={playerName || "Player"} />
             </div>
           </div>
@@ -542,6 +564,28 @@ export default function QuizMeetRoom() {
         currentName={playerName}
         onSave={handleSaveName}
       />
+
+      <Modal
+        size="sm"
+        isOpen={isLeaveConfirmOpen}
+        onOpenChange={(open) => setIsLeaveConfirmOpen(open)}
+        placement="center"
+      >
+        <ModalContent className="text-foreground bg-[#AF99B8]">
+          <ModalHeader className="text-xl">Leave Room?</ModalHeader>
+          <ModalBody className="pb-4">
+            <p className="text-sm">Are you sure you want to leave this room?</p>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="flat" onClick={() => setIsLeaveConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button color="danger" onClick={handleLeaveRoom}>
+                Leave
+              </Button>
+            </div>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </section>
   );
 }
