@@ -1,5 +1,5 @@
 import { useParams, useSearchParams } from "react-router-dom";
-import { Button } from "@nextui-org/react";
+import { Button, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react";
 import NavbarComponent from "../components/ui/Navbar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import QuizNameCard from "../components/quiz-meet-room/QuizNameCard";
@@ -54,6 +54,7 @@ export default function QuizMeetRoom() {
   const [isLocalPlayerMute, setIsLocalPlayerMute] = useState<boolean>(true);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState<string | null>(null);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState<boolean>(false);
+  const [isPlayersModalOpen, setIsPlayersModalOpen] = useState<boolean>(false);
   const [isNameModalOpen, setIsNameModalOpen] = useState<boolean>(false);
   const [isLinkCopied, setIsLinkCopied] = useState<boolean>(false);
 
@@ -243,6 +244,29 @@ export default function QuizMeetRoom() {
     playerName: `${playerName || "Player"} (You)`
   }), [localPeerId, playerName]);
 
+  const similarityPlayers = useMemo(() => {
+    const rows: Array<{ peerId: string; playerName: string; isMute: boolean; isSpeaking: boolean }> = [];
+    if (localPeerId) {
+      rows.push({
+        peerId: localPeerId,
+        playerName: `${playerName || "Player"} (You)`,
+        isMute: isLocalPlayerMute,
+        isSpeaking: !isLocalPlayerMute && isSpeaking
+      });
+    }
+
+    Object.entries(roomPlayers).forEach(([peerId, value]) => {
+      if (!peerId || peerId === "undefined" || peerId === localPeerId) return;
+      rows.push({
+        peerId,
+        playerName: value?.playerName || "Player",
+        isMute: Boolean(value?.isMute),
+        isSpeaking: Boolean(value?.isSpeaking)
+      });
+    });
+    return rows;
+  }, [isLocalPlayerMute, isSpeaking, localPeerId, playerName, roomPlayers]);
+
   const timerPercent = useMemo(() => {
     if (!questionEndsAt || quizStatus !== "playing") {
       return 0;
@@ -304,7 +328,15 @@ export default function QuizMeetRoom() {
                   <span className="hidden xs:inline">Leaderboard</span>
                 </Button>
               ) : (
-                <Button variant="flat" radius="sm" size="sm" className="min-w-0 px-3" isDisabled>
+                <Button
+                  variant="flat"
+                  radius="sm"
+                  size="sm"
+                  startContent={<Trophy size={18} />}
+                  onClick={() => setIsPlayersModalOpen(true)}
+                  className="min-w-0 px-3"
+                  isDisabled={quizStatus !== "playing" && quizStatus !== "finished"}
+                >
                   <span className="hidden xs:inline">Players: {totalPlayers}</span>
                 </Button>
               )}
@@ -446,6 +478,7 @@ export default function QuizMeetRoom() {
               topThree={topThree}
               similarityResult={similarityResult}
               localPeerId={localPeerId || ""}
+              totalPlayers={totalPlayers}
               handleSubmitAnswer={handleSubmitAnswer}
               selectedOptionId={selectedOptionId}
               correctOptionId={correctOptionId}
@@ -464,6 +497,44 @@ export default function QuizMeetRoom() {
         leaderboard={leaderboard}
         toggleMute={toggleMute}
       />
+
+      <Modal
+        size="lg"
+        isOpen={isPlayersModalOpen}
+        onOpenChange={(open) => setIsPlayersModalOpen(open)}
+        placement="center"
+      >
+        <ModalContent className="text-foreground bg-[#AF99B8]">
+          <ModalHeader className="text-2xl">Players</ModalHeader>
+          <ModalBody className="pb-6">
+            <ul className="flex flex-col gap-2">
+              {similarityPlayers.length === 0 ? (
+                <li className="text-sm opacity-80">No players available.</li>
+              ) : (
+                similarityPlayers.map((player) => (
+                  <li
+                    key={player.peerId}
+                    className="flex items-center justify-between rounded-xl px-3 py-2 bg-background/10 border border-background/20"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="light"
+                        size="sm"
+                        isIconOnly
+                        onClick={() => toggleMute(player.peerId, player.isMute)}
+                        className={player.isSpeaking ? "border-2 border-green-500" : ""}
+                      >
+                        {player.isMute ? <MicOff size={16} /> : <Mic size={16} />}
+                      </Button>
+                      <p className="font-medium">{player.playerName}</p>
+                    </div>
+                  </li>
+                ))
+              )}
+            </ul>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
       
       <PlayerNameModal
         isOpen={isNameModalOpen}

@@ -1,0 +1,705 @@
+[
+    {
+        "questionText": "You are suddenly inserted into the Friends apartment as a recurring character. What role would you realistically become in that group dynamic?",
+        "difficulty": "Easy",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Sarcastic observer like Chandler energy"
+            },
+            {
+                "optionText": "Chaotic wildcard"
+            },
+            {
+                "optionText": "Emotional support friend"
+            },
+            {
+                "optionText": "Quiet background regular"
+            }
+        ]
+    },
+    {
+        "questionText": "You are part of The Office documentary crew and can secretly influence one character’s decisions without them knowing. Who are you nudging most?",
+        "difficulty": "Medium",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Michael Scott"
+            },
+            {
+                "optionText": "Jim"
+            },
+            {
+                "optionText": "Dwight"
+            },
+            {
+                "optionText": "Pam"
+            }
+        ]
+    },
+    {
+        "questionText": "You get dropped into the Avengers team meeting and must choose one Avenger to sit next to during intense strategy discussions. Who feels safest?",
+        "difficulty": "Easy",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Captain America"
+            },
+            {
+                "optionText": "Iron Man"
+            },
+            {
+                "optionText": "Thor"
+            },
+            {
+                "optionText": "Black Widow"
+            }
+        ]
+    },
+    {
+        "questionText": "You are living in a sitcom universe where every misunderstanding could become a plot. What is your survival strategy?",
+        "difficulty": "Medium",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Over-communicate everything"
+            },
+            {
+                "optionText": "Lean into misunderstandings"
+            },
+            {
+                "optionText": "Observe chaos silently"
+            },
+            {
+                "optionText": "Become mediator"
+            }
+        ]
+    },
+    {
+        "questionText": "You can spend one chaotic day with a movie villain without consequences. What’s your energy?",
+        "difficulty": "Medium",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Curious interview mode"
+            },
+            {
+                "optionText": "Enjoy villain chaos"
+            },
+            {
+                "optionText": "Study psychology"
+            },
+            {
+                "optionText": "Try to reform them"
+            }
+        ]
+    },
+    {
+        "questionText": "You are suddenly a background character in a romcom airport confession scene. What are you doing in that moment?",
+        "difficulty": "Easy",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Watching drama unfold"
+            },
+            {
+                "optionText": "Cheering internally"
+            },
+            {
+                "optionText": "Rolling eyes slightly"
+            },
+            {
+                "optionText": "Emotionally invested stranger"
+            }
+        ]
+    },
+    {
+        "questionText": "You join the Brooklyn Nine-Nine precinct for one workday. What dynamic do you bring?",
+        "difficulty": "Easy",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Jake chaos energy"
+            },
+            {
+                "optionText": "Amy organized energy"
+            },
+            {
+                "optionText": "Terry wholesome energy"
+            },
+            {
+                "optionText": "Rosa mysterious energy"
+            }
+        ]
+    },
+    {
+        "questionText": "You are in a horror movie and discover the group is splitting up. What is your realistic behavior?",
+        "difficulty": "Easy",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Stay with biggest group"
+            },
+            {
+                "optionText": "Argue against splitting"
+            },
+            {
+                "optionText": "Follow curiosity anyway"
+            },
+            {
+                "optionText": "Accept cinematic fate"
+            }
+        ]
+    },
+    {
+        "questionText": "You are a judge on a reality talent show. What kind of judge persona emerges?",
+        "difficulty": "Easy",
+        "categoryId": 14,
+        "options": [
+            {
+                "optionText": "Kind supportive judge"
+            },
+            {
+                "optionText": "Honest blunt judge"
+            },
+            {
+                "optionText": "Entertaining dramatic judge"
+            },
+            {
+                "optionText": "Quiet thoughtful judge"
+            }
+        ]
+    },
+    {
+        "questionText": "You are living in a superhero world but only have minor powers. How do you position yourself socially?",
+        "difficulty": "Medium",
+        "categoryId": 14,
+        "options": [
+            {
+                "optionText": "Local hero"
+            },
+            {
+                "optionText": "Civilian observer"
+            },
+            {
+                "optionText": "Support role"
+            },
+            {
+                "optionText": "Comedic side character"
+            }
+        ]
+    },
+    {
+        "questionText": "You are stuck in a time-loop episode of a TV show. What becomes your mental phase first?",
+        "difficulty": "Medium",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Experimentation phase"
+            },
+            {
+                "optionText": "Existential confusion"
+            },
+            {
+                "optionText": "Enjoyment phase"
+            },
+            {
+                "optionText": "Problem-solving mode"
+            }
+        ]
+    },
+    {
+        "questionText": "You join a survival movie group stranded on an island. What reputation do you gain?",
+        "difficulty": "Easy",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Problem solver"
+            },
+            {
+                "optionText": "Morale booster"
+            },
+            {
+                "optionText": "Quiet adapter"
+            },
+            {
+                "optionText": "First to die"
+            }
+        ]
+    },
+    {
+        "questionText": "You are a contestant in a reality dating show villa environment. What archetype do viewers label you?",
+        "difficulty": "Medium",
+        "categoryId": 14,
+        "options": [
+            {
+                "optionText": "Fan favorite"
+            },
+            {
+                "optionText": "Mysterious introvert"
+            },
+            {
+                "optionText": "Drama magnet"
+            },
+            {
+                "optionText": "Slow-burn personality"
+            }
+        ]
+    },
+    {
+        "questionText": "You enter a fantasy tavern scene where quests are assigned. What energy do you bring to that table?",
+        "difficulty": "Easy",
+        "categoryId": 14,
+        "options": [
+            {
+                "optionText": "Hero enthusiasm"
+            },
+            {
+                "optionText": "Suspicious caution"
+            },
+            {
+                "optionText": "Comic commentary"
+            },
+            {
+                "optionText": "Strategic thinking"
+            }
+        ]
+    },
+    {
+        "questionText": "You are invited to a movie montage where everyone improves themselves. What is your montage activity?",
+        "difficulty": "Easy",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Skill training"
+            },
+            {
+                "optionText": "Lifestyle glow-up"
+            },
+            {
+                "optionText": "Social growth"
+            },
+            {
+                "optionText": "Creative exploration"
+            }
+        ]
+    },
+    {
+        "questionText": "You are part of an ensemble sitcom Thanksgiving episode. What role do you naturally play during dinner chaos?",
+        "difficulty": "Easy",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Peacemaker"
+            },
+            {
+                "optionText": "Chaos instigator"
+            },
+            {
+                "optionText": "Comic relief"
+            },
+            {
+                "optionText": "Observer enjoying drama"
+            }
+        ]
+    },
+    {
+        "questionText": "You wake up in a musical movie universe where people randomly sing feelings. What is your coping style?",
+        "difficulty": "Easy",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Fully sing along"
+            },
+            {
+                "optionText": "Internal cringe but adapt"
+            },
+            {
+                "optionText": "Observer mode"
+            },
+            {
+                "optionText": "Comedic improvisation"
+            }
+        ]
+    },
+    {
+        "questionText": "You are the best friend in a romcom helping your friend prepare for their big confession scene. What role do you realistically play?",
+        "difficulty": "Easy",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Speech coach"
+            },
+            {
+                "optionText": "Outfit consultant"
+            },
+            {
+                "optionText": "Emotional hype person"
+            },
+            {
+                "optionText": "Person secretly doubting the plan"
+            }
+        ]
+    },
+    {
+        "questionText": "Your favorite singer drops a surprise midnight album with zero promotion. What is your immediate behavior?",
+        "difficulty": "Easy",
+        "categoryId": 13,
+        "options": [
+            {
+                "optionText": "Listen instantly start to finish"
+            },
+            {
+                "optionText": "Text friends immediately"
+            },
+            {
+                "optionText": "Check social media reactions first"
+            },
+            {
+                "optionText": "Pretend to sleep but obviously awake"
+            }
+        ]
+    },
+    {
+        "questionText": "You are living inside a K-drama love triangle. What character energy do you bring?",
+        "difficulty": "Medium",
+        "categoryId": 14,
+        "options": [
+            {
+                "optionText": "Main character confusion"
+            },
+            {
+                "optionText": "Supportive best friend"
+            },
+            {
+                "optionText": "Unexpected rival"
+            },
+            {
+                "optionText": "Viewer screaming at screen energy"
+            }
+        ]
+    },
+    {
+        "questionText": "Your bias in a K-pop group makes unexpected eye contact through the camera during a performance (delusional but fun moment). Reaction?",
+        "difficulty": "Easy",
+        "categoryId": 13,
+        "options": [
+            {
+                "optionText": "Immediate meltdown"
+            },
+            {
+                "optionText": "Screenshot energy"
+            },
+            {
+                "optionText": "Laugh at self"
+            },
+            {
+                "optionText": "Tell nobody but remember forever"
+            }
+        ]
+    },
+    {
+        "questionText": "Anime confession scenes often happen at sunset or under fireworks. If you were in that scene, what role would you play?",
+        "difficulty": "Medium",
+        "categoryId": 1,
+        "options": [
+            {
+                "optionText": "Confessor"
+            },
+            {
+                "optionText": "Confused receiver"
+            },
+            {
+                "optionText": "Best friend hiding nearby"
+            },
+            {
+                "optionText": "Background character noticing everything"
+            }
+        ]
+    },
+    {
+        "questionText": "Celebrity breakup news drops and timelines explode with speculation. What is your behavior pattern?",
+        "difficulty": "Easy",
+        "categoryId": 9,
+        "options": [
+            {
+                "optionText": "Silent observer"
+            },
+            {
+                "optionText": "Read comments deeply"
+            },
+            {
+                "optionText": "Discuss with friends"
+            },
+            {
+                "optionText": "Pretend you don’t care but refresh anyway"
+            }
+        ]
+    },
+    {
+        "questionText": "You are the friend giving dating advice but your own love life is chaotic. Your vibe?",
+        "difficulty": "Easy",
+        "categoryId": 18,
+        "options": [
+            {
+                "optionText": "Wise advisor energy"
+            },
+            {
+                "optionText": "Learning through others"
+            },
+            {
+                "optionText": "Hypocritical but supportive"
+            },
+            {
+                "optionText": "Unqualified but confident"
+            }
+        ]
+    },
+    {
+        "questionText": "Your favorite artist performs your comfort song live unexpectedly. What is your emotional response?",
+        "difficulty": "Easy",
+        "categoryId": 13,
+        "options": [
+            {
+                "optionText": "Emotional tears"
+            },
+            {
+                "optionText": "Singing loudly"
+            },
+            {
+                "optionText": "Quiet emotional moment"
+            },
+            {
+                "optionText": "Recording with shaky hands"
+            }
+        ]
+    },
+    {
+        "questionText": "You are in a makeover montage scene before a big event. What montage energy do you bring?",
+        "difficulty": "Easy",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Glow-up main character"
+            },
+            {
+                "optionText": "Supportive stylist friend"
+            },
+            {
+                "optionText": "Comic relief chaos"
+            },
+            {
+                "optionText": "Already confident before montage"
+            }
+        ]
+    },
+    {
+        "questionText": "Online fandom war breaks out over something minor. Your realistic position?",
+        "difficulty": "Medium",
+        "categoryId": 9,
+        "options": [
+            {
+                "optionText": "Active defender"
+            },
+            {
+                "optionText": "Casual participant"
+            },
+            {
+                "optionText": "Neutral observer"
+            },
+            {
+                "optionText": "Eating popcorn watching chaos"
+            }
+        ]
+    },
+    {
+        "questionText": "You are the friend group member who suggests 'let’s take cute pictures' during outings. How accurate is that?",
+        "difficulty": "Easy",
+        "categoryId": 14,
+        "options": [
+            {
+                "optionText": "That is literally me"
+            },
+            {
+                "optionText": "Sometimes me"
+            },
+            {
+                "optionText": "I just appear in photos"
+            },
+            {
+                "optionText": "I disappear when cameras appear"
+            }
+        ]
+    },
+    {
+        "questionText": "Anime beach episode suddenly happens. Your role?",
+        "difficulty": "Easy",
+        "categoryId": 1,
+        "options": [
+            {
+                "optionText": "Main character fun energy"
+            },
+            {
+                "optionText": "Friend group chaos"
+            },
+            {
+                "optionText": "Relaxed observer"
+            },
+            {
+                "optionText": "Person who forgets sunscreen"
+            }
+        ]
+    },
+    {
+        "questionText": "Your comfort celebrity follows you back randomly. What is your internal state?",
+        "difficulty": "Easy",
+        "categoryId": 14,
+        "options": [
+            {
+                "optionText": "Shock disbelief"
+            },
+            {
+                "optionText": "Screenshot immediately"
+            },
+            {
+                "optionText": "Tell close friends"
+            },
+            {
+                "optionText": "Check if it’s real 20 times"
+            }
+        ]
+    },
+    {
+        "questionText": "You are in a romcom misunderstanding arc. How do you behave?",
+        "difficulty": "Medium",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Clarify instantly"
+            },
+            {
+                "optionText": "Overthink silently"
+            },
+            {
+                "optionText": "Wait dramatic reveal"
+            },
+            {
+                "optionText": "Accidentally worsen situation"
+            }
+        ]
+    },
+    {
+        "questionText": "Your friend says 'don’t stalk their profile' after a first date.",
+        "difficulty": "Easy",
+        "categoryId": 9,
+        "options": [
+            {
+                "optionText": "Respect boundary"
+            },
+            {
+                "optionText": "Light curiosity scroll"
+            },
+            {
+                "optionText": "Deep investigation mode"
+            },
+            {
+                "optionText": "Already stalked before they said it"
+            }
+        ]
+    },
+    {
+        "questionText": "You are the main character listening to sad music while staring out of a car window at night. Your vibe?",
+        "difficulty": "Easy",
+        "categoryId": 13,
+        "options": [
+            {
+                "optionText": "Full cinematic sadness"
+            },
+            {
+                "optionText": "Comfort melancholy"
+            },
+            {
+                "optionText": "Overdramatic enjoyment"
+            },
+            {
+                "optionText": "Window reflection analysis"
+            }
+        ]
+    },
+    {
+        "questionText": "You discover your friend group has unofficial roles (mom friend, chaotic friend, etc.). Where do you land?",
+        "difficulty": "Easy",
+        "categoryId": 14,
+        "options": [
+            {
+                "optionText": "Mom friend"
+            },
+            {
+                "optionText": "Chaos friend"
+            },
+            {
+                "optionText": "Therapist friend"
+            },
+            {
+                "optionText": "NPC friend"
+            }
+        ]
+    },
+    {
+        "questionText": "A dating show contestant you liked gets eliminated unexpectedly. Your reaction?",
+        "difficulty": "Easy",
+        "categoryId": 14,
+        "options": [
+            {
+                "optionText": "Genuine disappointment"
+            },
+            {
+                "optionText": "Analyze strategy"
+            },
+            {
+                "optionText": "Move on quickly"
+            },
+            {
+                "optionText": "Complain to friends dramatically"
+            }
+        ]
+    },
+    {
+        "questionText": "You and your friends start assigning each other romcom character tropes. What are you labeled?",
+        "difficulty": "Easy",
+        "categoryId": 12,
+        "options": [
+            {
+                "optionText": "Main character"
+            },
+            {
+                "optionText": "Best friend"
+            },
+            {
+                "optionText": "Chaotic side character"
+            },
+            {
+                "optionText": "Background supportive presence"
+            }
+        ]
+    },
+    {
+        "questionText": "You are emotionally invested in fictional couples who do not exist. How self-aware are you?",
+        "difficulty": "Easy",
+        "categoryId": 14,
+        "options": [
+            {
+                "optionText": "Fully invested proudly"
+            },
+            {
+                "optionText": "Invested but self-aware"
+            },
+            {
+                "optionText": "Casual interest"
+            },
+            {
+                "optionText": "Denial but invested"
+            }
+        ]
+    }
+]

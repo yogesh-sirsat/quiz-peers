@@ -59,6 +59,7 @@ export interface PlayingSession {
   currentAnswers: Map<string, { optionId: number; submittedAt: number }>;
   answerHistory: Map<number, Map<string, number | null>>;
   skipTimerVotes: Set<string>;
+  awaitingManualAdvance: boolean;
   questionDurationMs: number;
   interQuestionDelayMs: number;
 }
@@ -377,6 +378,8 @@ function beginNextQuestion(session: PlayingSession): void {
   session.questionStartedAt = Date.now();
   session.currentAnswers = new Map();
   session.skipTimerVotes = new Set();
+  session.awaitingManualAdvance = false;
+  session.interQuestionTimeout = null;
 
   session.questionTimeout = setTimeout(() => {
     finalizeCurrentQuestion(session.roomId, session.isRoomPublic);
@@ -409,7 +412,10 @@ function finalizeCurrentQuestion(roomId: string, isRoomPublic: boolean): void {
     return;
   }
 
-  if (session.questionTimeout) clearTimeout(session.questionTimeout);
+  if (session.questionTimeout) {
+    clearTimeout(session.questionTimeout);
+    session.questionTimeout = null;
+  }
   session.skipTimerVotes.clear();
 
   const currentQuestion = session.questions[session.currentQuestionIndex];
@@ -483,6 +489,8 @@ function finalizeCurrentQuestion(roomId: string, isRoomPublic: boolean): void {
     session.interQuestionTimeout = setTimeout(() => {
       beginNextQuestion(session);
     }, session.interQuestionDelayMs);
+  } else {
+    session.awaitingManualAdvance = true;
   }
 }
 
@@ -554,6 +562,7 @@ async function startQuiz(roomId: string, isRoomPublic: boolean): Promise<void> {
       sessionTotalCorrect: 0,
       sessionTotalPossible: 0,
       skipTimerVotes: new Set(),
+      awaitingManualAdvance: false,
       timer: null
     };
 
@@ -640,12 +649,20 @@ export function handleSubmitAnswer(ws: ExtendedWebSocket, data: any): void {
       safeSend(ws, { event: "submitAnswerFailed", message: "No active question." });
       return;
     }
+    if (!session.questionTimeout) {
+      safeSend(ws, { event: "submitAnswerFailed", message: "Question is no longer active." });
+      return;
+    }
 
     session.currentAnswers.set(ws.playerId, {
       optionId: data?.optionId,
       submittedAt: Date.now()
     });
     safeSend(ws, { event: "answerAccepted", alreadyAnswered: false });
+
+    if (session.currentAnswers.size === session.players.size) {
+      finalizeCurrentQuestion(session.roomId, session.isRoomPublic);
+    }
   } catch (error) {
     console.error(error);
     safeSend(ws, { event: "submitAnswerFailed", message: "Unable to submit answer." });
@@ -806,8 +823,9 @@ export function handleNextQuestion(ws: ExtendedWebSocket, data: any): void {
       return;
     }
 
-    // Only allow if not auto-playing and currently between questions
-    if (!session.isAutoPlay) {
+    // Only allow host/manual progression after current round has finalized.
+    if (!session.isAutoPlay && session.awaitingManualAdvance) {
+      session.awaitingManualAdvance = false;
       beginNextQuestion(session);
     }
   } catch (error) {
