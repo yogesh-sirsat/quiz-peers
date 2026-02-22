@@ -5,7 +5,7 @@ import https from "https";
 import path from "path";
 import "dotenv/config";
 
-const API_URL = process.env.VITE_SERVER_API_URL || "http://localhost:3000/api";
+const API_URL = process.env.SERVER_API_URL || "http://localhost:3000/api";
 const MAX_RETRIES = Number(process.env.SIMILARITY_IMPORT_MAX_RETRIES || 4);
 
 const httpClient = axios.create({
