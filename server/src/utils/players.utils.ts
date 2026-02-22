@@ -1,4 +1,4 @@
-import { PLAYER_NAMES_POSTFIX, PLAYER_NAMES_PREFIX } from "../constants/players.constant.ts";
+import { PLAYER_NAMES_POSTFIX, PLAYER_NAMES_PREFIX } from "../constants/players.constant";
 
 export function generateRandomPlayerName() {
   const playersNamesPrefixLength = PLAYER_NAMES_PREFIX.length;
@@ -8,3 +8,4 @@ export function generateRandomPlayerName() {
   const randomPlayerNamePostfix = PLAYER_NAMES_POSTFIX[Math.floor(Math.random() * playersNamesPostfixLength)];
   return `${randomPlayerNamePrefix} ${randomPlayerNamePostfix}`;
 }
+

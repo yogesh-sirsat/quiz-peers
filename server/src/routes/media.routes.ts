@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { uploadMedia } from "../controllers/media.controller.ts";
+import { uploadMedia } from "../controllers/media.controller";
 
 const router = Router();
 const upload = multer({
@@ -13,3 +13,4 @@ const upload = multer({
 router.post("/upload", upload.single("file"), uploadMedia);
 
 export default router;
+

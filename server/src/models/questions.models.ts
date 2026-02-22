@@ -1,5 +1,5 @@
-import * as db from "../database/postgres.database.ts";
-import { QuestionDTO, QuestionCreateInput, QuestionUpdateInput } from "../interfaces/question.interface.ts";
+import * as db from "../database/postgres.database";
+import { QuestionDTO, QuestionCreateInput, QuestionUpdateInput } from "../interfaces/question.interface";
 
 function mapToDTO(row: any): QuestionDTO {
   return {
@@ -154,3 +154,4 @@ export async function getRandomSimilarityQuestionsData(count: number): Promise<Q
     options: optionsByQuestionId.get(row.question_id) || []
   }));
 }
+

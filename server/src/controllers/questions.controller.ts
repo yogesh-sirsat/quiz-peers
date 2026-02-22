@@ -9,9 +9,9 @@ import {
   removeQuestionFromQuizData,
   setCorrectOptionData,
   getRandomSimilarityQuestionsData
-} from "../models/questions.models.ts";
-import { getOptionByIdData } from "../models/options.models.ts";
-import HttpAppError from "../errors/app.error.ts";
+} from "../models/questions.models";
+import { getOptionByIdData } from "../models/options.models";
+import HttpAppError from "../errors/app.error";
 
 export async function createQuestion(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -160,3 +160,4 @@ export async function getRandomSimilarityQuestions(req: Request, res: Response, 
     next(error);
   }
 }
+

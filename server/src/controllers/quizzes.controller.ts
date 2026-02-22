@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { getAllQuizzesData, getQuizByIdData, createQuizData, updateQuizData, deleteQuizData, getQuizQuestionsForPlay, getAllCategoriesData } from "../models/quiz.models.ts";
-import HttpAppError from "../errors/app.error.ts";
+import { getAllQuizzesData, getQuizByIdData, createQuizData, updateQuizData, deleteQuizData, getQuizQuestionsForPlay, getAllCategoriesData } from "../models/quiz.models";
+import HttpAppError from "../errors/app.error";
 
 export async function getAllQuizzes(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -84,3 +84,4 @@ export async function getAllCategories(_req: Request, res: Response, next: NextF
     next(error);
   }
 }
+
