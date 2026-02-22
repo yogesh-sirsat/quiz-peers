@@ -76,6 +76,7 @@ interface QuizPlayRoomProps {
   topThree: any[];
   similarityResult: SimilaritySessionResult | null;
   localPeerId: string;
+  totalPlayers: number;
   handleSubmitAnswer: (optionId: number) => void;
   selectedOptionId: number | null;
   correctOptionId: number | null;
@@ -116,27 +117,46 @@ function SimilarityFinishedView({
     onOpen();
   };
 
+  const getOptionLabel = (index: number) => {
+    if (index >= 0 && index < 26) return String.fromCharCode(65 + index);
+    return String(index + 1);
+  };
+
   return (
-    <div className="rounded-xl border border-background/20 bg-background/10 p-3 flex flex-col gap-3">
+    <div className="rounded-2xl border border-amber-300/30 bg-gradient-to-br from-indigo-900/80 via-fuchsia-900/70 to-orange-900/60 p-3 sm:p-4 flex flex-col gap-3 shadow-[0_0_30px_rgba(251,191,36,0.12)] text-slate-100">
       <div className="flex justify-between items-center">
-        <p className="text-sm font-medium">Results {pageIndex + 1}/{totalPages}</p>
+        <p className="text-sm font-semibold text-amber-100">Results {pageIndex + 1}/{totalPages}</p>
         <div className="flex gap-2">
-          <Button size="sm" variant="flat" isDisabled={pageIndex <= 0} onClick={() => setPageIndex((p) => Math.max(0, p - 1))}>
-            Prev
+          <Button
+            size="sm"
+            color="secondary"
+            variant="solid"
+            className="font-black shadow-md"
+            isDisabled={pageIndex <= 0}
+            onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+          >
+            ⚡ Prev
           </Button>
-          <Button size="sm" color="primary" isDisabled={pageIndex >= totalPages - 1} onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}>
-            Next
+          <Button
+            size="sm"
+            color="warning"
+            variant="solid"
+            className="font-black shadow-md"
+            isDisabled={pageIndex >= totalPages - 1}
+            onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+          >
+            Next ⚡
           </Button>
         </div>
       </div>
 
       {pageIndex === 0 && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-xl font-semibold">Most Matched Pairs</h3>
+          <h3 className="text-xl font-black text-amber-200 tracking-wide">Most Matched Pairs 🤝</h3>
           {(similarityResult.pairwise || []).slice(0, 12).map((pair, idx) => (
-            <div key={`${pair.playerAId}-${pair.playerBId}`} className="rounded-lg border border-background/20 bg-background/10 p-2 text-sm flex justify-between">
-              <span>{idx + 1}. {pair.playerAName} + {pair.playerBName}</span>
-              <span className="font-semibold">{pair.similarityCount}</span>
+            <div key={`${pair.playerAId}-${pair.playerBId}`} className="rounded-xl border border-amber-200/25 bg-indigo-900/40 p-2 text-sm flex justify-between">
+              <span className="font-semibold text-cyan-100">{idx + 1}. {pair.playerAName} + {pair.playerBName}</span>
+              <span className="font-black text-amber-300">{pair.similarityCount}</span>
             </div>
           ))}
         </div>
@@ -144,39 +164,48 @@ function SimilarityFinishedView({
 
       {pageIndex === 1 && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-xl font-semibold">Public Stats</h3>
-          <div className="rounded-lg border border-background/20 bg-background/10 p-3 text-sm">
-            Soulmate: {similarityResult.publicStats?.soulmate ? `${similarityResult.publicStats.soulmate.playerAName} + ${similarityResult.publicStats.soulmate.playerBName}` : "N/A"}
+          <h3 className="text-xl font-black text-cyan-200 tracking-wide">Similarity findings 🎭</h3>
+          <div className="rounded-xl border border-pink-200/20 bg-fuchsia-900/30 p-3 text-sm">
+            <span className="font-black text-pink-200">Soulmate 💘:</span>{" "}
+            <span className="text-cyan-100">{similarityResult.publicStats?.soulmate ? `${similarityResult.publicStats.soulmate.playerAName} + ${similarityResult.publicStats.soulmate.playerBName}` : "N/A"}</span>
           </div>
-          <div className="rounded-lg border border-background/20 bg-background/10 p-3 text-sm">
-            Lone wolf: {similarityResult.publicStats?.loneWolf?.playerName || "N/A"}
+          <div className="rounded-xl border border-violet-200/20 bg-violet-900/30 p-3 text-sm">
+            <span className="font-black text-violet-200">Lone Wolf 🐺:</span>{" "}
+            <span className="text-cyan-100">{similarityResult.publicStats?.loneWolf?.playerName || "N/A"}</span>
           </div>
-          <div className="rounded-lg border border-background/20 bg-background/10 p-3 text-sm">
-            Most popular picker: {similarityResult.publicStats?.mostPopularPicker?.playerName || "N/A"}
+          <div className="rounded-xl border border-emerald-200/20 bg-emerald-900/30 p-3 text-sm">
+            <span className="font-black text-emerald-200">Most Popular Picker 👑:</span>{" "}
+            <span className="text-cyan-100">{similarityResult.publicStats?.mostPopularPicker?.playerName || "N/A"}</span>
           </div>
-          <div className="rounded-lg border border-background/20 bg-background/10 p-3 text-sm">
-            Chaos picker: {similarityResult.publicStats?.chaosPicker?.playerName || "N/A"}
+          <div className="rounded-xl border border-orange-200/20 bg-orange-900/30 p-3 text-sm">
+            <span className="font-black text-orange-200">Chaos Picker 👻:</span>{" "}
+            <span className="text-cyan-100">{similarityResult.publicStats?.chaosPicker?.playerName || "N/A"}</span>
           </div>
         </div>
       )}
 
       {currentQuestionPageIndex >= 0 && currentQuestionPageIndex < questionPages.length && (
         <div className="flex flex-col gap-3">
-          <h3 className="text-lg font-semibold">
+          <h3 className="text-lg font-bold text-orange-100">
             Q{currentQuestionPageIndex + 1}: {questionPages[currentQuestionPageIndex].questionText}
           </h3>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {questionPages[currentQuestionPageIndex].options.map((option) => (
+            {questionPages[currentQuestionPageIndex].options.map((option, index) => (
               <li
                 key={option.optionId}
-                className="rounded-xl border-2 border-background/20 bg-background/10 p-3 cursor-pointer"
+                className="rounded-xl border-2 border-amber-200/25 bg-indigo-900/35 p-3 cursor-pointer hover:bg-indigo-900/50 transition-colors"
                 onClick={() => openPlayersModal(option.optionText || `Option ${option.optionId}`, option.players)}
               >
-                <p className="font-semibold">{option.optionText || `Option ${option.optionId}`}</p>
-                <p className="text-xs opacity-70 mt-1">Selected by {option.players.length} player(s)</p>
+                <p className="font-semibold flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-300/20 border border-amber-200/40 text-amber-200 text-xs font-black">
+                    {getOptionLabel(index)}
+                  </span>
+                  {option.optionText || `Option ${option.optionId}`}
+                </p>
+                <p className="text-xs text-amber-100/75 mt-1">Selected by {option.players.length} player(s)</p>
                 <div className="flex flex-wrap gap-1 mt-2">
                   {option.players.slice(0, 10).map((player) => (
-                    <span key={player.peerId} className="text-[10px] px-2 py-1 rounded-full bg-primary/20">
+                    <span key={player.peerId} className="text-[10px] px-2 py-1 rounded-full bg-amber-200/20 border border-amber-100/30 text-cyan-100">
                       {player.playerName}
                     </span>
                   ))}
@@ -189,24 +218,24 @@ function SimilarityFinishedView({
 
       {pageIndex === totalPages - 1 && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-xl font-semibold">You Matched Most With</h3>
+          <h3 className="text-xl font-black text-lime-200 tracking-wide">You Matched Most With 🧲</h3>
           {(localRanking || []).map((entry, idx) => (
-            <div key={entry.peerId} className="rounded-lg border border-background/20 bg-background/10 p-2 text-sm flex justify-between">
-              <span>{idx + 1}. {entry.playerName}</span>
-              <span className="font-semibold">{entry.similarityCount}</span>
+            <div key={entry.peerId} className="rounded-xl border border-lime-300/20 bg-lime-900/25 p-2 text-sm flex justify-between">
+              <span className="text-cyan-100">{idx + 1}. {entry.playerName}</span>
+              <span className="font-black text-lime-300">{entry.similarityCount}</span>
             </div>
           ))}
         </div>
       )}
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-        <ModalContent>
+        <ModalContent className="text-foreground bg-[#AF99B8] border border-background/20">
           {() => (
             <>
               <ModalHeader>{modalTitle}</ModalHeader>
-              <ModalBody>
+              <ModalBody className="pb-4">
                 {modalPlayers.length === 0 ? (
-                  <p className="text-sm opacity-70">No players selected this option.</p>
+                  <p className="text-s">No players selected this option.</p>
                 ) : (
                   <ul className="pb-3">
                     {modalPlayers.map((player) => (
@@ -235,6 +264,7 @@ export default function QuizPlayRoom({
   topThree,
   similarityResult,
   localPeerId,
+  totalPlayers,
   handleSubmitAnswer,
   selectedOptionId,
   correctOptionId,
@@ -247,10 +277,30 @@ export default function QuizPlayRoom({
   const failAudio = useRef(new Audio("/sound-effects/fail-trumpet.mp3"));
   const celebrationAudio = useRef(new Audio("/sound-effects/celebration-trumpets.mp3"));
 
-  const shuffledOptions = useMemo(() => {
+  const displayedOptions = useMemo(() => {
     if (!currentQuestion?.options) return [];
+    if (gameMode === "SIMILARITY") {
+      return currentQuestion.options;
+    }
     return [...currentQuestion.options].sort(() => Math.random() - 0.5);
-  }, [currentQuestion?.options]);
+  }, [currentQuestion?.options, gameMode]);
+
+  const getOptionLabel = (index: number) => {
+    if (index >= 0 && index < 26) return String.fromCharCode(65 + index);
+    return String(index + 1);
+  };
+
+  const allPlayersAnswered = useMemo(() => {
+    if (!totalPlayers || totalPlayers < 1) return false;
+    const answeredCount = roundResults.filter(
+      (result) => result.selectedOptionId !== null && result.selectedOptionId !== undefined
+    ).length;
+    return answeredCount >= totalPlayers;
+  }, [roundResults, totalPlayers]);
+
+  const shouldDisableManualNext = useMemo(() => {
+    return gameMode === "SIMILARITY" && !allPlayersAnswered && timeRemainingMs > 0;
+  }, [allPlayersAnswered, gameMode, timeRemainingMs]);
 
   useEffect(() => {
     successAudio.current.volume = 0.5;
@@ -412,7 +462,7 @@ export default function QuizPlayRoom({
 
           <p className="text-lg font-medium">{currentQuestion.questionText}</p>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {shuffledOptions?.map((option) => (
+            {displayedOptions?.map((option, index) => (
               <li key={option.optionId}>
                 <button
                   type="button"
@@ -430,7 +480,12 @@ export default function QuizPlayRoom({
                       <AudioPlayer audioUrl={option.audioUrl} compact />
                     </div>
                   )}
-                  <span className="font-bold text-center sm:text-left">{option.optionText || `Option ${option.optionId}`}</span>
+                  <span className="font-bold text-center sm:text-left flex items-center justify-center sm:justify-start gap-2">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/15 border border-white/20 text-xs font-black shrink-0">
+                      {getOptionLabel(index)}
+                    </span>
+                    {option.optionText || `Option ${option.optionId}`}
+                  </span>
                 </button>
               </li>
             ))}
@@ -457,6 +512,7 @@ export default function QuizPlayRoom({
                       color="success"
                       variant="solid"
                       onClick={handleNextQuestion}
+                      isDisabled={shouldDisableManualNext}
                       className="font-black w-full h-12 text-lg shadow-lg"
                       startContent={<FastForward size={24} />}
                     >
@@ -468,6 +524,9 @@ export default function QuizPlayRoom({
                     </div>
                   )}
                 </div>
+              )}
+              {!isAutoPlay && isHost && gameMode === "SIMILARITY" && shouldDisableManualNext && (
+                <p className="text-xs text-warning text-center">Next unlocks after everyone answers or timer ends.</p>
               )}
             </div>
           ) : null}
