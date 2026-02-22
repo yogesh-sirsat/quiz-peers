@@ -7,8 +7,8 @@ import {
   deleteQuiz,
   getQuizQuestions,
   getAllCategories
-} from "../controllers/quizzes.controller.ts";
-import { addQuestionToQuiz, removeQuestionFromQuiz } from "../controllers/questions.controller.ts";
+} from "../controllers/quizzes.controller";
+import { addQuestionToQuiz, removeQuestionFromQuiz } from "../controllers/questions.controller";
 
 const router = Router();
 
@@ -26,3 +26,4 @@ router.post("/:quizId/questions", addQuestionToQuiz);
 router.delete("/:quizId/questions/:questionId", removeQuestionFromQuiz);
 
 export default router;
+

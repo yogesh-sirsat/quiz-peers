@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { getRoomDetails, getValidGeneratedRoomId, getValidPublicRoomId } from "../websockets/rooms.websocket.ts";
-import { GameMode } from "../interfaces/question.interface.ts";
+import { getRoomDetails, getValidGeneratedRoomId, getValidPublicRoomId } from "../websockets/rooms.websocket";
+import { GameMode } from "../interfaces/question.interface";
 
 function normalizeMode(mode: unknown): GameMode {
   return mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA";
@@ -44,3 +44,4 @@ export async function getRoomDetailsById(req: Request, res: Response, next: Next
     next(error);
   }
 }
+

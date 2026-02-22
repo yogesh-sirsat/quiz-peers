@@ -1,11 +1,11 @@
-import { generateRandomRoomId } from "../utils/rooms.utils.ts";
-import { getGeneratePlayerName } from "./players.websocket.ts";
-import HttpError from "../errors/app.error.ts";
-import { getQuizQuestionsForPlay, updateQuizStats } from "../models/quiz.models.ts";
-import { getRandomSimilarityQuestionsData } from "../models/questions.models.ts";
-import { ExtendedWebSocket } from "../interfaces/websocket.interface.ts";
-import { QuizQuestion } from "../interfaces/quiz.interface.ts";
-import { GameMode, SimilaritySessionResult } from "../interfaces/question.interface.ts";
+import { generateRandomRoomId } from "../utils/rooms.utils";
+import { getGeneratePlayerName } from "./players.websocket";
+import HttpError from "../errors/app.error";
+import { getQuizQuestionsForPlay, updateQuizStats } from "../models/quiz.models";
+import { getRandomSimilarityQuestionsData } from "../models/questions.models";
+import { ExtendedWebSocket } from "../interfaces/websocket.interface";
+import { QuizQuestion } from "../interfaces/quiz.interface";
+import { GameMode, SimilaritySessionResult } from "../interfaces/question.interface";
 
 export interface PlayerState {
   ws: ExtendedWebSocket;
@@ -945,3 +945,4 @@ export function getValidPublicRoomId(
   }
   return getValidGeneratedRoomId(true, qId, mode, similarityQuestionCount);
 }
+

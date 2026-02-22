@@ -1,5 +1,5 @@
-import * as db from "../database/postgres.database.ts";
-import { CategoryDTO, QuizCreateInput, QuizDTO, QuizQuestion, QuizUpdateInput } from "../interfaces/quiz.interface.ts";
+import * as db from "../database/postgres.database";
+import { CategoryDTO, QuizCreateInput, QuizDTO, QuizQuestion, QuizUpdateInput } from "../interfaces/quiz.interface";
 function mapQuizToDTO(row: any): QuizDTO {
   return {
     quizId: row.quiz_id,
@@ -274,3 +274,4 @@ export async function getAllCategoriesData(): Promise<CategoryDTO[]> {
   const result = await db.query<any>(queryStr);
   return result.rows.map(mapCategoryToDTO);
 }
+

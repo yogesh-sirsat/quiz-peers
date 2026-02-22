@@ -1,5 +1,5 @@
-import * as db from "../database/postgres.database.ts";
-import { OptionDTO, OptionCreateInput, OptionUpdateInput } from "../interfaces/option.interface.ts";
+import * as db from "../database/postgres.database";
+import { OptionDTO, OptionCreateInput, OptionUpdateInput } from "../interfaces/option.interface";
 
 function mapToDTO(row: any): OptionDTO {
   return {
@@ -59,3 +59,4 @@ export async function deleteOptionData(optionId: number): Promise<boolean> {
   const result = await db.query(queryStr, [optionId]);
   return (result.rowCount ?? 0) > 0;
 }
+

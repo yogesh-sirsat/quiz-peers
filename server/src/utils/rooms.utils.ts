@@ -1,4 +1,4 @@
-import { FICTIONAL_PLACES, INTERGALACTIC_ADJECTIVES } from "../constants/rooms.constant.ts";
+import { FICTIONAL_PLACES, INTERGALACTIC_ADJECTIVES } from "../constants/rooms.constant";
 import { customAlphabet, urlAlphabet } from "nanoid";
 
 export function generateRandomRoomId() {
@@ -14,3 +14,4 @@ export function generateRandomRoomId() {
   const nanoid = customAlphabet(urlAlphabet, 7);
   return `${randomIntergalacticAdjective}-${randomFictionalPlace}-${nanoid()}`;
 }
+

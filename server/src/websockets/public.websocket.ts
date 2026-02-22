@@ -1,5 +1,5 @@
-import { publicPlayingRooms, publicWaitingRooms } from "../websockets/rooms.websocket.ts";
-import { ExtendedWebSocket } from "../interfaces/websocket.interface.ts";
+import { publicPlayingRooms, publicWaitingRooms } from "../websockets/rooms.websocket";
+import { ExtendedWebSocket } from "../interfaces/websocket.interface";
 
 export function handleJoinPublicRoom(ws: ExtendedWebSocket, data: any): void {
   console.log(publicPlayingRooms, publicWaitingRooms);
@@ -35,3 +35,4 @@ export function handleJoinPublicRoom(ws: ExtendedWebSocket, data: any): void {
     );
   }
 }
+

@@ -1,7 +1,7 @@
-import { WaitingRoom } from "./rooms.websocket.ts";
-import { generateRandomPlayerName } from "../utils/players.utils.ts";
+import { WaitingRoom } from "./rooms.websocket";
+import { generateRandomPlayerName } from "../utils/players.utils";
 import { nanoid } from "nanoid";
-import { ExtendedWebSocket } from "../interfaces/websocket.interface.ts";
+import { ExtendedWebSocket } from "../interfaces/websocket.interface";
 
 export function getGeneratePlayerName(room: WaitingRoom): string {
   let tries = 0;
@@ -24,3 +24,4 @@ export function handleChangePlayerName(_ws: ExtendedWebSocket, _data: any): void
   // This logic seems redundant with the one in rooms.websocket.ts, but let's type it correctly
   // In a real refactor, one of these should be removed.
 }
+

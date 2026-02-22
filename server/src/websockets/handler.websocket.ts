@@ -1,5 +1,5 @@
 import { WebSocketServer, RawData } from "ws";
-import { ExtendedWebSocket, WebSocketMessage } from "../interfaces/websocket.interface.ts";
+import { ExtendedWebSocket, WebSocketMessage } from "../interfaces/websocket.interface";
 import {
   handleJoinRoom,
   handleLeaveWaitingRoom,
@@ -10,7 +10,7 @@ import {
   handleSkipTimer,
   handleToggleAutoPlay,
   handleNextQuestion
-} from "../websockets/rooms.websocket.ts";
+} from "../websockets/rooms.websocket";
 
 let liveConnections = 0;
 
@@ -74,3 +74,4 @@ function setupWebSocketServer(wss: WebSocketServer): void {
 export default {
   setupWebSocketServer
 };
+
