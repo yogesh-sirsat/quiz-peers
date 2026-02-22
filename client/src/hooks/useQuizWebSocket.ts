@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import Peer, { DataConnection } from 'peerjs';
-import { addChatMessage, addUpdateRoomPlayer, removeRoomPlayer } from '../store/features/roomSlice';
+import { addChatMessage, addUpdateRoomPlayer, clearRoomState, removeRoomPlayer } from '../store/features/roomSlice';
 import { GameMode, LeaderboardEntry, QuizQuestion, SimilaritySessionResult } from '../types';
 
 export type QuizStatus = "waiting" | "playing" | "finished";
@@ -127,6 +127,8 @@ export function useQuizWebSocket(
   }, [handlePlayerDataConnection]);
 
   useEffect(() => {
+    dispatch(clearRoomState());
+
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.CLOSED) {
       wsRef.current = new WebSocket(webSocketUrl);
     }
@@ -306,6 +308,9 @@ export function useQuizWebSocket(
 
     return () => {
       if (wsRef?.current) {
+        if (wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ event: "leaveWaitingRoom" }));
+        }
         wsRef.current.onclose = null;
         wsRef.current.onerror = null;
         wsRef.current.onmessage = null;
@@ -317,6 +322,7 @@ export function useQuizWebSocket(
         peerRef.current.destroy();
         peerRef.current = null;
       }
+      dispatch(clearRoomState());
     };
   }, [dispatch, handleConnectionData, handleJoinRoomSuccess, initialMode, isRoomPublic, navigate, quizId, roomId, similarityQuestionCount, webSocketUrl]);
 
