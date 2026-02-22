@@ -140,16 +140,20 @@ export function useQuizWebSocket(
     if (!peerRef.current) {
       peerId = uuidv4();
       peerRef.current = new Peer(peerId, {
-        secure: false, debug: 1, config: {
-          // iceServers: [
-          //   { urls: "stun:stun.l.google.com:19302" },
-          //   {
-          //     urls: "turn:freeturn.net:3478",
-          //     username: "free", credential: "free"
-          //   }, {
-          //     urls: "turns:freeturn.net:5349",
-          //     username: "free", credential: "free"
-          //   }]
+        secure: window.location.protocol === "https:",
+        debug: 1,
+        config: {
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:global.stun.twilio.com:3478"},
+            {
+              urls: "turn:freeturn.net:3478",
+              username: "free", credential: "free"
+            }, {
+              urls: "turns:freeturn.net:5349",
+              username: "free", credential: "free"
+            }
+          ]
         }
       });
       setPeer(peerRef.current);
