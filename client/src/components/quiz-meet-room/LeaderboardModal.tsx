@@ -14,6 +14,7 @@ interface LeaderboardModalProps {
 
 export function LeaderboardModal({ isOpen, onOpenChange, leaderboard, toggleMute }: LeaderboardModalProps) {
   const roomPlayers = useSelector((state: RootState) => state.room.roomPlayers);
+  const speakingIndicatorClass = "ring-2 ring-green-400 shadow-[0_0_0_2px_rgba(74,222,128,0.25)]";
 
   return (
     <Modal
@@ -44,15 +45,23 @@ export function LeaderboardModal({ isOpen, onOpenChange, leaderboard, toggleMute
                   <div className="flex items-center gap-3">
                     <p className="font-medium">#{index + 1}</p>
                     {roomPlayer && (
-                       <Button 
-                         variant="light" 
-                         size="sm" 
-                         isIconOnly 
-                         onClick={() => toggleMute(player.peerId, isMute)}
-                         className={roomPlayer?.isSpeaking ? "border-2 border-green-500" : ""}
-                       >
-                         {isMute ? <MicOff size={16} /> : <Mic size={16} />}
-                       </Button>
+                      <div className="relative">
+                        <Button
+                          variant="light"
+                          size="sm"
+                          isIconOnly
+                          onClick={() => toggleMute(player.peerId, isMute)}
+                          className={roomPlayer?.isSpeaking ? speakingIndicatorClass : ""}
+                        >
+                          {isMute ? <MicOff size={16} /> : <Mic size={16} />}
+                        </Button>
+                        {roomPlayer?.isSpeaking && (
+                          <span className="absolute -right-1 -top-1 flex h-2 w-2">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-300 opacity-75" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
+                          </span>
+                        )}
+                      </div>
                     )}
                     <p className="font-medium">{player.playerName}</p>
                   </div>

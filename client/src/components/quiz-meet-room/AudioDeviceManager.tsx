@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 
 interface AudioDeviceManagerProps {
+  localPeerId?: string;
   selectedAudioDevice: string | null;
   setSelectedAudioDevice: (deviceId: string) => void;
   isLocalPlayerMute: boolean;
@@ -13,6 +14,7 @@ interface AudioDeviceManagerProps {
 }
 
 export default function AudioDeviceManager({
+  localPeerId,
   selectedAudioDevice,
   setSelectedAudioDevice,
   isLocalPlayerMute,
@@ -21,21 +23,31 @@ export default function AudioDeviceManager({
 }: AudioDeviceManagerProps) {
   const roomPlayers = useSelector((state: RootState) => state.room.roomPlayers);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[] | null>(null);
+  const speakingIndicatorClass = "ring-2 ring-green-400 shadow-[0_0_0_2px_rgba(74,222,128,0.25)]";
 
   useEffect(() => {
-    (async () => {
+    const updateDevices = async () => {
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const audioDevicesList = devices.filter((device) => device.kind === "audioinput");
         setAudioDevices(audioDevicesList);
-        const defaultAudio = audioDevicesList.find((device) => device.label);
-        if (defaultAudio && !selectedAudioDevice) {
+        
+        // If we have devices and labels but haven't selected one yet, or if selected one is gone
+        const defaultAudio = audioDevicesList.find((device) => device.label && device.deviceId);
+        if (defaultAudio && (!selectedAudioDevice || !audioDevicesList.find(d => d.deviceId === selectedAudioDevice))) {
           setSelectedAudioDevice(defaultAudio.deviceId);
         }
       } catch (err) {
         console.error("Error enumerating devices:", err);
       }
-    })();
+    };
+
+    updateDevices();
+    navigator.mediaDevices.addEventListener("devicechange", updateDevices);
+
+    return () => {
+      navigator.mediaDevices.removeEventListener("devicechange", updateDevices);
+    };
   }, [selectedAudioDevice, setSelectedAudioDevice]);
 
   const handleAudioChange = (key: Key) => {
@@ -43,13 +55,14 @@ export default function AudioDeviceManager({
   };
 
   const handleLocalPlayerMuteStatus = (muteStatus: boolean) => {
+    if (!localPeerId) return;
     setIsLocalPlayerMute(muteStatus);
     Object.values(roomPlayers).forEach((player: any) => {
       if (player?.dataConnection?.open) {
         player.dataConnection.send({
           type: "muteStatus",
           muteStatus,
-          peerId: player.peerId
+          peerId: localPeerId
         });
       }
     });
@@ -62,12 +75,18 @@ export default function AudioDeviceManager({
           handleLocalPlayerMuteStatus(!isLocalPlayerMute);
         }}
         isIconOnly
-        className={isSpeaking && !isLocalPlayerMute ? "border-2 border-green-500" : ""}
+        className={`relative ${isSpeaking && !isLocalPlayerMute ? speakingIndicatorClass : ""}`}
       >
         {isLocalPlayerMute ? (
           <MicOff size={22} />
         ) : (
           <Mic size={22} />
+        )}
+        {isSpeaking && !isLocalPlayerMute && (
+          <span className="absolute -right-1 -top-1 flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-300 opacity-75" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-400" />
+          </span>
         )}
       </Button>
       <Dropdown 

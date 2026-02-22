@@ -71,6 +71,7 @@ interface QuizPlayRoomProps {
   questionIndex: number;
   totalQuestions: number;
   timeRemainingMs: number;
+  questionEndsAt: number;
   timerPercent: number;
   roundResults: RoundResult[];
   topThree: any[];
@@ -259,6 +260,7 @@ export default function QuizPlayRoom({
   questionIndex,
   totalQuestions,
   timeRemainingMs,
+  questionEndsAt,
   timerPercent,
   roundResults,
   topThree,
@@ -276,6 +278,10 @@ export default function QuizPlayRoom({
   const successAudio = useRef(new Audio("/sound-effects/success-yipee.mp3"));
   const failAudio = useRef(new Audio("/sound-effects/fail-trumpet.mp3"));
   const celebrationAudio = useRef(new Audio("/sound-effects/celebration-trumpets.mp3"));
+
+  const isTimerExpired = useMemo(() => {
+    return questionEndsAt > 0 && timeRemainingMs <= 500;
+  }, [questionEndsAt, timeRemainingMs]);
 
   const displayedOptions = useMemo(() => {
     if (!currentQuestion?.options) return [];
@@ -299,7 +305,7 @@ export default function QuizPlayRoom({
   }, [roundResults, totalPlayers]);
 
   const shouldDisableManualNext = useMemo(() => {
-    return gameMode === "SIMILARITY" && !allPlayersAnswered && timeRemainingMs > 0;
+    return gameMode === "SIMILARITY" && !allPlayersAnswered && timeRemainingMs > 500;
   }, [allPlayersAnswered, gameMode, timeRemainingMs]);
 
   useEffect(() => {
@@ -467,7 +473,7 @@ export default function QuizPlayRoom({
                 <button
                   type="button"
                   onClick={() => handleSubmitAnswer(option.optionId)}
-                  disabled={correctOptionId !== null}
+                  disabled={correctOptionId !== null || isTimerExpired}
                   className={`w-full text-left rounded-xl border-2 px-3 py-3 transition-all flex flex-col gap-3 min-h-[80px] ${optionClassName(option.optionId)}`}
                 >
                   {option.imageUrl && (
@@ -491,17 +497,21 @@ export default function QuizPlayRoom({
             ))}
           </ul>
 
-          {roundResults.length > 0 && (gameMode === "SIMILARITY" || correctOptionId !== null) ? (
+          {(roundResults.length > 0 || isTimerExpired) && (gameMode === "SIMILARITY" || correctOptionId !== null) ? (
             <div className="mt-4 flex flex-col items-center gap-3">
-              {gameMode === "TRIVIA" ? (
+              {gameMode === "TRIVIA" && roundResults.length > 0 ? (
                 <p className="text-sm font-bold text-center bg-background/20 py-2 px-4 rounded-lg w-full">
                   {roundResults.find((result) => result.peerId === localPeerId)?.isCorrect
                     ? `Correct! +${roundResults.find((result) => result.peerId === localPeerId)?.pointsAwarded || 0} pts`
                     : "Incorrect. Better luck next time!"}
                 </p>
-              ) : (
+              ) : roundResults.length > 0 ? (
                 <p className="text-sm font-bold text-center bg-background/20 py-2 px-4 rounded-lg w-full">
                   Answers locked for this round
+                </p>
+              ) : (
+                <p className="text-sm font-bold text-center bg-background/20 py-2 px-4 rounded-lg w-full">
+                  Time's Up! No answers recorded.
                 </p>
               )}
 
@@ -526,7 +536,7 @@ export default function QuizPlayRoom({
                 </div>
               )}
               {!isAutoPlay && isHost && gameMode === "SIMILARITY" && shouldDisableManualNext && (
-                <p className="text-xs text-warning text-center">Next unlocks after everyone answers or timer ends.</p>
+                <p className="text-xs text-warning-700 text-center">Next unlocks after everyone answers or timer ends.</p>
               )}
             </div>
           ) : null}
