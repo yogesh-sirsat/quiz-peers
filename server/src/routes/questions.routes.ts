@@ -7,11 +7,11 @@ import {
   deleteQuestion,
   setCorrectOption,
   getRandomSimilarityQuestions
-} from "../controllers/questions.controller.ts";
+} from "../controllers/questions.controller";
 import {
   createOption,
   getOptionsByQuestionId
-} from "../controllers/options.controller.ts";
+} from "../controllers/options.controller";
 
 const router = Router();
 
@@ -28,3 +28,4 @@ router.post("/:questionId/options", createOption);
 router.put("/:questionId/correct-option", setCorrectOption);
 
 export default router;
+

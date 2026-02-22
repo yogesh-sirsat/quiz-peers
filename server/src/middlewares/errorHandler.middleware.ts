@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import HttpAppError from "../errors/app.error.ts";
+import HttpAppError from "../errors/app.error";
 
 function errorHandler(err: any, _req: Request, res: Response, _next: NextFunction): void {
   console.error("Unexpected error:", err);
@@ -11,3 +11,4 @@ function errorHandler(err: any, _req: Request, res: Response, _next: NextFunctio
 }
 
 export default errorHandler;
+

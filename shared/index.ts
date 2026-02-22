@@ -1,5 +1,6 @@
-export * from './quiz/index.ts';
-export * from './question/index.ts';
-export * from './option/index.ts';
-export * from './room/index.ts';
-export * from './websocket/index.ts';
+export * from './quiz/index';
+export * from './question/index';
+export * from './option/index';
+export * from './room/index';
+export * from './websocket/index';
+

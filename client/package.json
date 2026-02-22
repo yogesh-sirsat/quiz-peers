@@ -11,11 +11,10 @@
   },
   "dependencies": {
     "@nextui-org/react": "^2.4.2",
-    "@quiz-peers/shared": "workspace:*",
+    "@quiz-peers/shared": "*",
     "@reduxjs/toolkit": "^2.2.6",
     "@supabase/supabase-js": "^2.95.3",
     "browser-image-compression": "^2.0.2",
-    "client": "file:",
     "dayjs": "^1.11.11",
     "framer-motion": "^11.2.12",
     "lucide-react": "^0.418.0",

@@ -4,8 +4,8 @@ import {
   getOptionsByQuestionIdData,
   updateOptionData,
   deleteOptionData,
-} from "../models/options.models.ts";
-import HttpAppError from "../errors/app.error.ts";
+} from "../models/options.models";
+import HttpAppError from "../errors/app.error";
 
 export async function createOption(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -57,3 +57,4 @@ export async function deleteOption(req: Request, res: Response, next: NextFuncti
     next(error);
   }
 }
+
