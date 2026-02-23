@@ -126,20 +126,20 @@ export default function AdminPanel() {
   return (
     <section className="min-h-screen bg-background text-foreground">
       <NavbarComponent isAdmin={true} />
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-foreground">Quiz Admin Panel</h1>
-          <div className="flex gap-3">
+      <div className="max-w-7xl mx-auto p-3 xxs:p-4 xs:p-6">
+        <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-4 mb-6">
+          <h1 className="text-2xl xs:text-3xl font-bold text-foreground">Quiz Admin Panel</h1>
+          <div className="flex gap-2 xxs:gap-3 w-full xs:w-auto">
             <Button 
                 color="primary" 
                 variant="solid"
                 startContent={<Plus size={18} />} 
                 onClick={handleOpenCreateQuiz}
-                className="font-semibold shadow-lg"
+                className="font-semibold shadow-lg flex-1 xs:flex-none"
             >
               New Quiz
             </Button>
-            <Button color="danger" variant="flat" onClick={handleLogout} className="font-semibold">
+            <Button color="danger" variant="flat" onClick={handleLogout} className="font-semibold flex-1 xs:flex-none">
               Logout
             </Button>
           </div>

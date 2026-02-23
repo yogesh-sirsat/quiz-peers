@@ -524,7 +524,7 @@ export default function QuizMeetRoom() {
     <section className="w-screen min-h-screen max-h-screen flex flex-col overflow-y-auto">
       <NavbarComponent />
       <article
-        className="mt-4 xs:mt-6 mx-3 xs:mx-4 md:mx-auto w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] gap-2 flex flex-col overflow-y-auto">
+        className="mt-4 xs:mt-6 mx-2 xxs:mx-3 xs:mx-4 md:mx-auto w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] gap-2 flex flex-col overflow-y-auto">
         {quizStatus === "waiting" && gameMode === "TRIVIA" && <QuizNameCard quizId={Number(quizId)} />}
         {quizStatus === "waiting" && gameMode === "SIMILARITY" && (
           <div className="text-foreground flex flex-col gap-2 bg-background/60 shadow-2xl p-3 xxs:p-4 xs:p-6 rounded-2xl">
@@ -533,15 +533,15 @@ export default function QuizMeetRoom() {
           </div>
         )}
 
-        <section className="mb-6 flex flex-col gap-3 text-foreground bg-background/60 shadow-2xl p-3 xxs:p-4 xs:p-6 rounded-2xl overflow-y-auto">
+        <section className="mb-6 flex flex-col gap-3 text-foreground bg-background/60 shadow-2xl p-2 xxs:p-3 xs:p-4 sm:p-6 rounded-2xl overflow-y-auto">
           <div className="flex flex-row justify-between items-center mb-1 pr-1 gap-2">
-            <div className="flex flex-col">
-                <h1 className="text-xl xs:text-2xl font-semibold">Quiz Room</h1>
-                <p className={`text-[10px] font-bold uppercase tracking-widest ${isWsConnected ? 'text-success-300' : 'text-danger animate-pulse'}`}>
+            <div className="flex flex-col min-w-0">
+                <h1 className="text-lg xs:text-xl sm:text-2xl font-semibold truncate">Quiz Room</h1>
+                <p className={`text-[9px] xxs:text-[10px] font-bold uppercase tracking-widest ${isWsConnected ? 'text-success-300' : 'text-danger animate-pulse'}`}>
                     {isWsConnected ? '● Connected' : '○ Reconnecting...'}
                 </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 xxs:gap-2">
               {quizStatus === "playing" && hasAnsweredCurrent && correctOptionId === null && (
                 <Button
                   variant={hasVotedToSkip ? "solid" : "flat"}
@@ -585,11 +585,12 @@ export default function QuizMeetRoom() {
                     radius="sm"
                     size="sm"
                     color={isLinkCopied ? "success" : "default"}
-                    startContent={isLinkCopied ? <Check size={18} /> : <Share2 size={18} />}
+                    startContent={isLinkCopied ? <Check size={16} /> : <Share2 size={16} />}
                     onClick={handleShareLink}
-                    className="min-w-0 px-3 w-[120px]"
+                    className="min-w-0 px-2 xxs:px-3 text-[10px] xxs:text-xs"
                 >
-                    <span className="hidden xs:inline">{isLinkCopied ? "Copied!" : "Invite Friends"}</span>
+                    <span className="hidden xxs:inline">{isLinkCopied ? "Copied!" : "Invite Friends"}</span>
+                    <span className="xxs:hidden">{isLinkCopied ? "Copied!" : "Invite"}</span>
                 </Button>
               )}
               <Button

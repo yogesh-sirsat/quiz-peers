@@ -60,14 +60,14 @@ export default function QuizDetails() {
         ) : isLoading ? (
           <>Loading...</>
         ) : data ? (
-          <article className="text-foreground flex flex-col items-center bg-background/60 shadow-2xl p-3 xxs:p-5 xs:p-7 rounded-2xl">
+          <article className="text-foreground w-full max-w-[640px] md:max-w-none flex flex-col items-center bg-background/60 shadow-2xl p-3 xxs:p-5 xs:p-7 rounded-2xl overflow-hidden">
             <Image 
               isBlurred 
               isZoomed 
               src={data?.coverImageUrl} 
-              className="max-h-[360px] max-w-[640px] object-contain rounded-xl"
+              className="w-full max-w-full max-h-[360px] object-contain rounded-xl"
             />
-            <div className="w-auto md:w-[42rem] slg:w-[46rem] lg:w-[52rem] flex flex-col gap-2 pt-4">
+            <div className="w-full md:w-[42rem] slg:w-[46rem] lg:w-[52rem] flex flex-col gap-2 pt-4">
               <h1 className="font-semibold text-2xl xs:text-3xl sm:text-4xl break-words">{data?.quizName}</h1>
 
               <p className="text-sm xs:text-base">{data?.description}</p>

@@ -456,17 +456,17 @@ export default function QuizPlayRoom({
       {currentQuestion ? (
         <>
           {currentQuestion.imageUrl && (
-            <div className="w-full flex justify-center mb-4 bg-black/5 rounded-xl overflow-hidden h-60">
+            <div className="w-full flex justify-center mb-3 xxs:mb-4 bg-black/5 rounded-xl overflow-hidden h-40 xxs:h-48 xs:h-60">
               <img src={currentQuestion.imageUrl} alt="Question" className="h-full w-full object-contain" />
             </div>
           )}
           {currentQuestion.audioUrl && (
-            <div className="w-full flex justify-center mb-4">
+            <div className="w-full flex justify-center mb-3 xxs:mb-4">
               <AudioPlayer audioUrl={currentQuestion.audioUrl} />
             </div>
           )}
 
-          <p className="text-lg font-medium">{currentQuestion.questionText}</p>
+          <p className="text-base xs:text-lg font-medium mb-1 xxs:mb-2">{currentQuestion.questionText}</p>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {displayedOptions?.map((option, index) => (
               <li key={option.optionId}>
