@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Quiz Import Schema",
+  "type": "object",
+  "properties": {
+    "quizName": {
+      "type": "string",
+      "description": "The title of the quiz"
+    },
+    "description": {
+      "type": "string",
+      "description": "A short description of the quiz"
+    },
+    "coverImageUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to the cover image"
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "questionText": {
+            "type": "string"
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": ["Easy", "Medium", "Hard"]
+          },
+           "qtype": {
+            "type": "string",
+            "enum": ["TRIVIA", "SIMILARITY", "MAJORITY"]
+          },
+          "categoryId": {
+            "type": "integer",
+            "description": "ID of the category (e.g., 1 for Anime, 15 for Programming)"
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "audioUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "options": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "properties": {
+                "optionText": {
+                  "type": "string"
+                },
+                "imageUrl": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "audioUrl": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "isCorrect": {
+                  "type": "boolean",
+                  "description": "Set to true if this is the correct answer"
+                }
+              },
+              "required": ["optionText"]
+            }
+          }
+        },
+        "required": ["questionText", "options"]
+      }
+    }
+  },
+  "required": ["quizName", "questions"]
+}

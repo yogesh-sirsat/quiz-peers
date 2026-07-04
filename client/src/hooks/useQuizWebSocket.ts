@@ -1,0 +1,369 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
+import Peer, { DataConnection } from 'peerjs';
+import { addChatMessage, addUpdateRoomPlayer, clearRoomState, removeRoomPlayer } from '../store/features/roomSlice';
+import { GameMode, LeaderboardEntry, QuizQuestion, SimilaritySessionResult } from '../types';
+
+export type QuizStatus = "waiting" | "playing" | "finished";
+
+export type CurrentQuestion = QuizQuestion;
+
+export interface ConnectionData {
+    type: string;
+    sender?: string;
+    text?: string;
+    timeStamp?: number;
+    peerId?: string;
+    muteStatus?: boolean;
+    isSpeaking?: boolean;
+}
+
+export function useQuizWebSocket(
+  roomId: string | undefined, 
+  quizId: number | undefined, 
+  isRoomPublic: boolean,
+  webSocketUrl: string,
+  initialMode: GameMode = "TRIVIA",
+  similarityQuestionCount: number = 10
+) {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const [playerName, setPlayerName] = useState<string | null>(null);
+  const [localPeerId, setLocalPeerId] = useState<string | undefined>();
+  const [hostPeerId, setHostPeerId] = useState<string | null>(null);
+  const [readyPeerIds, setReadyPeerIds] = useState<string[]>([]);
+  const [totalPlayers, setTotalPlayers] = useState<number>(0);
+  const [quizStatus, setQuizStatus] = useState<QuizStatus>("waiting");
+  const [gameMode, setGameMode] = useState<GameMode>(initialMode);
+  
+  const [currentQuestion, setCurrentQuestion] = useState<CurrentQuestion | null>(null);
+  const [questionIndex, setQuestionIndex] = useState<number>(0);
+  const [totalQuestions, setTotalQuestions] = useState<number>(0);
+  const [questionEndsAt, setQuestionEndsAt] = useState<number>(0);
+  const [questionDurationMs, setQuestionDurationMs] = useState<number>(15000);
+  const [correctOptionId, setCorrectOptionId] = useState<number | null>(null);
+  
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [roundResults, setRoundResults] = useState<any[]>([]);
+  const [topThree, setTopThree] = useState<any[]>([]);
+  const [similarityResult, setSimilarityResult] = useState<SimilaritySessionResult | null>(null);
+  const [skipCount, setSkipCount] = useState<number>(0);
+  const [isAutoPlay, setIsAutoPlay] = useState<boolean>(false);
+  const [isWsConnected, setIsWsConnected] = useState<boolean>(false);
+  const [roomError, setRoomError] = useState<string | null>(null);
+  const [peer, setPeer] = useState<Peer | null>(null);
+
+  const peerRef = useRef<Peer | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  const sendJson = useCallback((data: any) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(data));
+    }
+  }, []);
+
+  const handleConnectionData = useCallback((data: ConnectionData, fallbackPeerId?: string) => {
+    switch (data.type) {
+      case "chatMessage":
+        dispatch(addChatMessage({
+          id: uuidv4(),
+          sender: data?.sender || "Unknown",
+          text: data?.text || "",
+          timestamp: data?.timeStamp || Date.now()
+        }));
+        break;
+      case "muteStatus":
+        if (!(data?.peerId || fallbackPeerId)) break;
+        dispatch(addUpdateRoomPlayer({
+          key: data?.peerId || fallbackPeerId || "",
+          value: { isMute: data?.muteStatus }
+        }));
+        break;
+      case "speakingStatus":
+        if (!(data?.peerId || fallbackPeerId)) break;
+        dispatch(addUpdateRoomPlayer({
+          key: data?.peerId || fallbackPeerId || "",
+          value: { isSpeaking: data?.isSpeaking }
+        }));
+        break;
+      default:
+        break;
+    }
+  }, [dispatch]);
+
+  const handlePlayerDataConnection = useCallback((player: any, localPlayerName: string) => {
+    if (!peerRef.current) return;
+    
+    let dataConnection = (peerRef.current.connections as any)[player?.peerId]?.find((conn: any) => conn.type === "data");
+    if (!dataConnection) {
+      dataConnection = peerRef.current.connect(player?.peerId, {
+        reliable: true,
+        metadata: { playerName: localPlayerName }
+      });
+    }
+
+    dataConnection.on("open", () => {
+      dispatch(addUpdateRoomPlayer({
+        key: player?.peerId, value: {
+          dataConnection, playerName: player?.playerName, isMute: false
+        }
+      }));
+      dataConnection.on("data", (data: any) => {
+        handleConnectionData(data as ConnectionData, player?.peerId);
+      });
+    });
+  }, [dispatch, handleConnectionData]);
+
+  const handleJoinRoomSuccess = useCallback((roomData: any, peerId: string, localPlayerName: string) => {
+    try {
+      roomData?.roomPlayers?.forEach((player: any) => {
+        if (player?.peerId === peerId) {
+          return;
+        }
+        handlePlayerDataConnection(player, localPlayerName);
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }, [handlePlayerDataConnection]);
+
+  useEffect(() => {
+    dispatch(clearRoomState());
+
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.CLOSED) {
+      wsRef.current = new WebSocket(webSocketUrl);
+    }
+    let peerId: string;
+    if (!peerRef.current) {
+      peerId = uuidv4();
+      peerRef.current = new Peer(peerId, {
+        secure: window.location.protocol === "https:",
+        debug: 1,
+        config: {
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:global.stun.twilio.com:3478"},
+            {
+              urls: "turn:freeturn.net:3478",
+              username: "free", credential: "free"
+            }, {
+              urls: "turns:freeturn.net:5349",
+              username: "free", credential: "free"
+            }
+          ]
+        }
+      });
+      setPeer(peerRef.current);
+    } else {
+      peerId = peerRef.current.id;
+      setPeer(peerRef.current);
+    }
+
+    peerRef.current.on("open", (id) => {
+      setLocalPeerId(id);
+    });
+
+    peerRef.current.on("connection", (conn: DataConnection) => {
+      const remotePlayerName = (conn.metadata as any)?.playerName;
+      dispatch(addUpdateRoomPlayer({
+        key: conn.peer,
+        value: { dataConnection: conn, playerName: remotePlayerName || "Player", isMute: false }
+      }));
+      if (remotePlayerName) {
+        dispatch(addChatMessage({
+          id: uuidv4(),
+          sender: "System",
+          text: `${remotePlayerName} joined the room!`,
+          timestamp: Date.now()
+        }));
+      }
+      conn.on("data", (data: any) => {
+        handleConnectionData(data as ConnectionData, conn.peer);
+      });
+    });
+
+    peerRef.current.on("disconnected", () => {
+      peerRef.current?.reconnect();
+    });
+
+    wsRef.current.onopen = () => {
+      setIsWsConnected(true);
+      try {
+        wsRef.current?.send(JSON.stringify({
+          roomId,
+          quizId,
+          peerId,
+          event: "joinRoom",
+          isRoomPublic,
+          mode: initialMode,
+          similarityQuestionCount
+        }));
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
+    wsRef.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      switch (data?.event) {
+        case "roomError":
+          setRoomError(data?.message || "Room error");
+          break;
+        case "joinRoomSuccess":
+          setPlayerName(data?.playerName || null);
+          setHostPeerId(data?.hostPeerId || null);
+          setReadyPeerIds(data?.roomPlayers?.filter((player: any) => player.readyToStart).map((player: any) => player.peerId) || []);
+          setTotalPlayers(data?.roomPlayers?.length || 0);
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
+          setTimeout(() => {
+            handleJoinRoomSuccess(data, peerId, data?.playerName || "");
+          }, 1000);
+          break;
+        case "joinRoomFailed":
+          alert(data?.message);
+          navigate(initialMode === "SIMILARITY" ? "/similarity" : "/quiz/" + quizId);
+          break;
+        case "playerNameChanged":
+          if (data?.success && data?.newPlayerName) {
+            setPlayerName(data.newPlayerName);
+          }
+          break;
+        case "playerLeftWaitingRoom":
+          dispatch(removeRoomPlayer(data?.peerId || ""));
+          dispatch(addChatMessage({
+            id: uuidv4(),
+            sender: "System Bot",
+            text: `${data?.playerName} left the room.`,
+            timestamp: Date.now()
+          }));
+          break;
+        case "waitingRoomState":
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
+          setHostPeerId(data?.hostPeerId || null);
+          setReadyPeerIds(data?.readyPeerIds || []);
+          setTotalPlayers(data?.totalPlayers || 0);
+          setIsAutoPlay(data?.isAutoPlay ?? true);
+          if (data?.roomPlayers) {
+            data.roomPlayers.forEach((player: any) => {
+              if (player.peerId && player.peerId !== "undefined" && player.peerId !== peerId) {
+                dispatch(addUpdateRoomPlayer({
+                  key: player.peerId,
+                  value: { playerName: player.playerName }
+                }));
+              }
+            });
+          }
+          break;
+        case "quizStarted":
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
+          setQuizStatus("playing");
+          setTotalQuestions(data?.totalQuestions || 0);
+          setRoundResults([]);
+          setSimilarityResult(null);
+          break;
+        case "quizStartFailed":
+          alert(data?.message || "Could not start quiz.");
+          break;
+        case "quizQuestion":
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
+          setQuizStatus("playing");
+          setCurrentQuestion(data?.question || null);
+          setQuestionIndex((data?.questionIndex || 0) + 1);
+          setTotalQuestions(data?.totalQuestions || 0);
+          setQuestionDurationMs(data?.questionDurationMs || 15000);
+          setQuestionEndsAt(data?.questionEndsAt || 0);
+          setLeaderboard(data?.leaderboard || []);
+          setCorrectOptionId(null);
+          setSkipCount(0);
+          break;
+        case "skipTimerUpdate":
+          setSkipCount(data?.skipCount || 0);
+          break;
+        case "answerAccepted":
+          // Can handle if needed
+          break;
+        case "questionResult":
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
+          setQuestionEndsAt(0);
+          setRoundResults(data?.results || []);
+          setLeaderboard(data?.leaderboard || []);
+          setCorrectOptionId(data?.correctOptionId || null);
+          setIsAutoPlay(data?.isAutoPlay ?? false);
+          break;
+        case "playerLeftPlayingRoom":
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
+          setLeaderboard(data?.leaderboard || []);
+          break;
+        case "quizFinished":
+          setGameMode((data?.mode === "SIMILARITY" ? "SIMILARITY" : "TRIVIA"));
+          setQuizStatus("finished");
+          setLeaderboard(data?.leaderboard || []);
+          setTopThree(data?.topThree || []);
+          setSimilarityResult(data?.similarityResult || null);
+          setCurrentQuestion(null);
+          setRoundResults([]);
+          break;
+        default:
+          break;
+      }
+    };
+
+    wsRef.current.onerror = () => setIsWsConnected(false);
+    wsRef.current.onclose = () => setIsWsConnected(false);
+
+    return () => {
+      if (wsRef?.current) {
+        if (wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ event: "leaveWaitingRoom" }));
+        }
+        wsRef.current.onclose = null;
+        wsRef.current.onerror = null;
+        wsRef.current.onmessage = null;
+        wsRef.current.onopen = null;
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      if (peerRef?.current) {
+        peerRef.current.destroy();
+        peerRef.current = null;
+      }
+      setPeer(null);
+      dispatch(clearRoomState());
+    };
+  }, [dispatch, handleConnectionData, handleJoinRoomSuccess, initialMode, isRoomPublic, navigate, quizId, roomId, similarityQuestionCount, webSocketUrl]);
+
+  return {
+    playerName,
+    localPeerId,
+    hostPeerId,
+    readyPeerIds,
+    totalPlayers,
+    quizStatus,
+    gameMode,
+    currentQuestion,
+    questionIndex,
+    totalQuestions,
+    questionEndsAt,
+    questionDurationMs,
+    correctOptionId,
+    leaderboard,
+    roundResults,
+    topThree,
+    similarityResult,
+    skipCount,
+    isAutoPlay,
+    isWsConnected,
+    roomError,
+    peer,
+    sendJson,
+    setQuizStatus,
+    setRoundResults,
+    setCurrentQuestion,
+    setLeaderboard,
+    setTopThree,
+    setIsAutoPlay
+  };
+}

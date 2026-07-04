@@ -17,5 +17,26 @@ module.exports = {
       "warn",
       { allowConstantExport: true },
     ],
+    "react/prop-types": "off",
   },
+  overrides: [
+    {
+      files: ["**/*.ts", "**/*.tsx"],
+      parser: "@typescript-eslint/parser",
+      extends: [
+        "plugin:@typescript-eslint/recommended",
+      ],
+      plugins: ["@typescript-eslint"],
+      rules: {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": [
+          "warn",
+          { 
+            "varsIgnorePattern": "^_|React",
+            "argsIgnorePattern": "^_"
+          }
+        ],
+      },
+    },
+  ],
 };

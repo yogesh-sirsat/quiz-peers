@@ -1,0 +1,19 @@
+{
+  "name": "quiz-peers-monorepo",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server",
+    "shared"
+  ],
+  "scripts": {
+    "server:dev": "npm run dev -w server",
+    "server:start": "npm run start -w server",
+    "server:build": "npm run build -w server",
+    "client:dev": "npm run dev -w client",
+    "client:build": "npm run build -w client"
+  },
+  "engines": {
+    "node": "^22.0.0"
+  }
+}

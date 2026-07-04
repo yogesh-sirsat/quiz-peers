@@ -1,0 +1,496 @@
+[
+  {
+    "questionText": "A zombie apocalypse starts and you are with a group of survivors. What is your first role in the squad?",
+    "difficulty": "Easy",
+    "categoryId": 14,
+    "options": [
+      {
+        "optionText": "Leader who acts confident but clueless"
+      },
+      {
+        "optionText": "Silent survival expert"
+      },
+      {
+        "optionText": "Comic relief liability"
+      },
+      {
+        "optionText": "Person who betrays group accidentally"
+      }
+    ]
+  },
+  {
+    "questionText": "Ross and Rachel from Friends—honestly, were they actually on a break?",
+    "difficulty": "Medium",
+    "categoryId": 12,
+    "options": [
+      {
+        "optionText": "Yes clearly"
+      },
+      {
+        "optionText": "No absolutely not"
+      },
+      {
+        "optionText": "Depends on perspective"
+      },
+      {
+        "optionText": "I just enjoy chaos"
+      }
+    ]
+  },
+  {
+    "questionText": "You accidentally like a 2018 photo. Strategy?",
+    "difficulty": "Easy",
+    "categoryId": 9,
+    "options": [
+      {
+        "optionText": "Unlike instantly"
+      },
+      {
+        "optionText": "Throw phone away"
+      },
+      {
+        "optionText": "Accept destiny"
+      },
+      {
+        "optionText": "Like more to confuse"
+      }
+    ]
+  },
+  {
+    "questionText": "You get invisibility for 10 minutes. What do you do?",
+    "difficulty": "Medium",
+    "categoryId": 14,
+    "options": [
+      {
+        "optionText": "Eavesdrop on people"
+      },
+      {
+        "optionText": "Prank someone harmlessly"
+      },
+      {
+        "optionText": "Explore restricted places"
+      },
+      {
+        "optionText": "Panic about responsibility"
+      }
+    ]
+  },
+  {
+    "questionText": "Your main music playlist disappears forever. What is the vibe of your replacement playlist?",
+    "difficulty": "Medium",
+    "categoryId": 13,
+    "options": [
+      {
+        "optionText": "Sad indie era"
+      },
+      {
+        "optionText": "Hyper pop chaos"
+      },
+      {
+        "optionText": "Old classics comfort"
+      },
+      {
+        "optionText": "Random algorithm journey"
+      }
+    ]
+  },
+  {
+    "questionText": "You are a character in a horror movie. Why do you die first?",
+    "difficulty": "Easy",
+    "categoryId": 12,
+    "options": [
+      {
+        "optionText": "Curiosity"
+      },
+      {
+        "optionText": "Helping others"
+      },
+      {
+        "optionText": "Overconfidence"
+      },
+      {
+        "optionText": "Trip while running"
+      }
+    ]
+  },
+  {
+    "questionText": "A friend tells you a secret and says 'don’t tell anyone.' You…",
+    "difficulty": "Medium",
+    "categoryId": 18,
+    "options": [
+      {
+        "optionText": "Take secret to grave"
+      },
+      {
+        "optionText": "Tell one trusted friend"
+      },
+      {
+        "optionText": "Forget secret"
+      },
+      {
+        "optionText": "Accidentally reveal"
+      }
+    ]
+  },
+  {
+    "questionText": "An exact biological clone of you appears right in front of you. First question?",
+    "difficulty": "Hard",
+    "categoryId": 14,
+    "options": [
+      {
+        "optionText": "What do you know?"
+      },
+      {
+        "optionText": "Are you better than me?"
+      },
+      {
+        "optionText": "Let’s prank people"
+      },
+      {
+        "optionText": "Who is real?"
+      }
+    ]
+  },
+  {
+    "questionText": "You have been dating someone casually, but then you meet someone amazing.",
+    "difficulty": "Hard",
+    "categoryId": 18,
+    "options": [
+      {
+        "optionText": "Stay loyal"
+      },
+      {
+        "optionText": "Explore new connection"
+      },
+      {
+        "optionText": "Overthink endlessly"
+      },
+      {
+        "optionText": "Avoid both temporarily"
+      }
+    ]
+  },
+  {
+    "questionText": "You wake up and realize you have been transformed into a cat.",
+    "difficulty": "Easy",
+    "categoryId": 14,
+    "options": [
+      {
+        "optionText": "Knock things off tables"
+      },
+      {
+        "optionText": "Sleep all day"
+      },
+      {
+        "optionText": "Judge humans"
+      },
+      {
+        "optionText": "Cause chaos"
+      }
+    ]
+  },
+  {
+    "questionText": "Someone spoils the ending of a show you are currently binging.",
+    "difficulty": "Easy",
+    "categoryId": 12,
+    "options": [
+      {
+        "optionText": "Forgive quickly"
+      },
+      {
+        "optionText": "Fake anger"
+      },
+      {
+        "optionText": "Real anger"
+      },
+      {
+        "optionText": "Spoil back"
+      }
+    ]
+  },
+  {
+    "questionText": "You can instantly master one useless but impressive skill..",
+    "difficulty": "Medium",
+    "categoryId": 14,
+    "options": [
+      {
+        "optionText": "Perfect meme timing"
+      },
+      {
+        "optionText": "Dramatic exits"
+      },
+      {
+        "optionText": "Mimicking accents"
+      },
+      {
+        "optionText": "Winning arguments online"
+      }
+    ]
+  },
+  {
+    "questionText": "The group chat suddenly goes silent after you send a message.",
+    "difficulty": "Easy",
+    "categoryId": 9,
+    "options": [
+      {
+        "optionText": "Send meme"
+      },
+      {
+        "optionText": "Wait"
+      },
+      {
+        "optionText": "Start random topic"
+      },
+      {
+        "optionText": "Observe silence"
+      }
+    ]
+  },
+  {
+    "questionText": "You become ghost for a day.",
+    "difficulty": "Easy",
+    "categoryId": 14,
+    "options": [
+      {
+        "optionText": "Spy"
+      },
+      {
+        "optionText": "Prank"
+      },
+      {
+        "optionText": "Explore places"
+      },
+      {
+        "optionText": "Philosophical wandering"
+      }
+    ]
+  },
+  {
+    "questionText": "If your life had narrator voice, it would be:",
+    "difficulty": "Medium",
+    "categoryId": 12,
+    "options": [
+      {
+        "optionText": "Serious documentary"
+      },
+      {
+        "optionText": "Sitcom commentary"
+      },
+      {
+        "optionText": "Chaotic anime"
+      },
+      {
+        "optionText": "Calm audiobook"
+      }
+    ]
+  },
+  {
+    "questionText": "Trapped in a shopping mall overnight with friends due to a power outage—food courts closed, security gone. What role do you naturally slip into?",
+    "difficulty": "Medium",
+    "categoryId": 14,
+    "options": [
+      {
+        "optionText": "Leader planning activities"
+      },
+      {
+        "optionText": "Explorer wandering stores"
+      },
+      {
+        "optionText": "Comedian turning it into bits"
+      },
+      {
+        "optionText": "Observer enjoying the weirdness"
+      }
+    ]
+  },
+  {
+    "questionText": "A stranger makes eye contact multiple times across a room. It feels slightly cinematic but awkward. What is your natural reaction?",
+    "difficulty": "Medium",
+    "categoryId": 14,
+    "options": [
+      {
+        "optionText": "Avoid eye contact forever after"
+      },
+      {
+        "optionText": "Give a single awkward smile"
+      },
+      {
+        "optionText": "Pretend to be busy on your phone"
+      },
+      {
+        "optionText": "Lean into the mystery of the moment"
+      }
+    ]
+  },
+  {
+    "questionText": "You finish a show you’ve been binging for weeks. Credits are rolling, and you feel an empty void. What do you usually do next?",
+    "difficulty": "Medium",
+    "categoryId": 12,
+    "options": [
+      {
+        "optionText": "Search for a new show immediately"
+      },
+      {
+        "optionText": "Watch edits and fan content"
+      },
+      {
+        "optionText": "Rewatch your favorite scenes"
+      },
+      {
+        "optionText": "Sit quietly processing the finale"
+      }
+    ]
+  },
+  {
+    "questionText": "A friend trips dramatically but harmlessly while walking with you.",
+    "difficulty": "Easy",
+    "categoryId": 18,
+    "options": [
+      {
+        "optionText": "Immediate concern and help"
+      },
+      {
+        "optionText": "Laugh first, then help them up"
+      },
+      {
+        "optionText": "Pretend to be calm but amused"
+      },
+      {
+        "optionText": "Record it mentally for future teasing"
+      }
+    ]
+  },
+  {
+    "questionText": "You wake up with invisibility powers that last only ten minutes.",
+    "difficulty": "Medium",
+    "categoryId": 14,
+    "options": [
+      {
+        "optionText": "Observe conversations unnoticed"
+      },
+      {
+        "optionText": "Pull a harmless prank"
+      },
+      {
+        "optionText": "Explore restricted places"
+      },
+      {
+        "optionText": "Freeze under moral pressure"
+      }
+    ]
+  },
+  {
+    "questionText": "You enter a meeting room confidently, only to realize you are definitely in the wrong place.",
+    "difficulty": "Easy",
+    "categoryId": 18,
+    "options": [
+      {
+        "optionText": "Perform a silent, immediate exit"
+      },
+      {
+        "optionText": "Give a confident fake reason for leaving"
+      },
+      {
+        "optionText": "Awkward smile and walk out"
+      },
+      {
+        "optionText": "Stay a moment out of curiosity"
+      }
+    ]
+  },
+  {
+    "questionText": "Stuck in an elevator with strangers and soft music. No one is talking.",
+    "difficulty": "Medium",
+    "categoryId": 18,
+    "options": [
+      {
+        "optionText": "Stare at the floor numbers"
+      },
+      {
+        "optionText": "Check your phone repeatedly"
+      },
+      {
+        "optionText": "Stand neutrally and stay calm"
+      },
+      {
+        "optionText": "Hum internally to the background music"
+      }
+    ]
+  },
+  {
+    "questionText": "You meet your future self briefly and can only ask one question.",
+    "difficulty": "Hard",
+    "categoryId": 14,
+    "options": [
+      {
+        "optionText": "Are we happy?"
+      },
+      {
+        "optionText": "Did it all work out?"
+      },
+      {
+        "optionText": "What should I avoid doing?"
+      },
+      {
+        "optionText": "What surprised you most?"
+      }
+    ]
+  },
+  {
+    "questionText": "Everyone in a group laughs at a movie joke except you. What do you do?",
+    "difficulty": "Medium",
+    "categoryId": 12,
+    "options": [
+      {
+        "optionText": "Laugh anyway to fit in"
+      },
+      {
+        "optionText": "Give a polite, neutral smile"
+      },
+      {
+        "optionText": "Remain neutral and silent"
+      },
+      {
+        "optionText": "Analyze why the others found it funny"
+      }
+    ]
+  },
+  {
+    "questionText": "A song from a specific past life phase plays randomly in public, triggering nostalgia. What is your typical reaction pattern?",
+    "difficulty": "Medium",
+    "categoryId": 13,
+    "options": [
+      {
+        "optionText": "Full emotional immersion"
+      },
+      {
+        "optionText": "A quiet, private smile"
+      },
+      {
+        "optionText": "Replay the lyrics internally"
+      },
+      {
+        "optionText": "Detach and observe the feeling"
+      }
+    ]
+  },
+  {
+    "questionText": "You can erase one minor but painful cringe memory forever—even others will forget it. What influences your decision most?",
+    "difficulty": "Hard",
+    "categoryId": 14,
+    "options": [
+      {
+        "optionText": "Keep it as a lesson for growth"
+      },
+      {
+        "optionText": "Erase it without any hesitation"
+      },
+      {
+        "optionText": "Stay conflicted and keep it"
+      },
+      {
+        "optionText": "Keep it as funny personal lore"
+      }
+    ]
+  }
+]
