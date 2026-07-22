@@ -26,6 +26,6 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
 
           script: |
-            cd /home/ubuntu/webapps/quiz-peers/prod-scripts
+            cd /home/ubuntu/web-apps/quiz-peers/prod-scripts
             chmod +x deploy-qp-server.sh
             ./deploy-qp-server.sh
