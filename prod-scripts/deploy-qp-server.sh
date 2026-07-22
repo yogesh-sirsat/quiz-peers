@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -xe
 
 echo "==> Updating code"
 
@@ -8,15 +8,15 @@ cd /home/ubuntu/web-apps/quiz-peers
 
 git fetch origin
 git checkout prod
-git pull origin prod
+git reset --hard origin/prod
 
 echo "==> Installing dependencies"
 
-npm install
+/usr/bin/npm install
 
 echo "==> Building"
 
-npm run server:build
+/usr/bin/npm run server:build
 
 echo "==> Restarting server"
 
