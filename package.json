@@ -14,6 +14,9 @@
     "client:build": "npm run build -w client"
   },
   "engines": {
-    "node": "^22.0.0"
+    "node": "^24.18.0"
+  },
+  "allowScripts": {
+    "@swc/core@1.15.11": true
   }
 }
